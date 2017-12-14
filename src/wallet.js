@@ -1438,6 +1438,7 @@ Wallet.prototype.fanOutUnspents = function(params, callback) {
 
       // Need to clear these out since only 1 may be set
       delete txParams.fee;
+      txParams.originalFeeRate = txParams.feeRate;
       delete txParams.feeRate;
       delete txParams.feeTxConfirmTarget;
       txParams.fee = baseFee;
@@ -1674,6 +1675,7 @@ Wallet.prototype.consolidateUnspents = function(params, callback) {
       const netAmount = Math.max(error.result.available - totalFee, self.bitgo.getConstants().minOutputSize);
       // Need to clear these out since only 1 may be set
       delete txParams.fee;
+      txParams.originalFeeRate = txParams.feeRate;
       delete txParams.feeRate;
       delete txParams.feeTxConfirmTarget;
 

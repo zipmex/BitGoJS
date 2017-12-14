@@ -360,8 +360,8 @@ exports.createTransaction = function(params) {
     // Calculate the cost of spending a single input, i.e. the smallest economical unspent value
     return Promise.try(function() {
 
-      if (_.isNumber(params.feeRate)) {
-        return params.feeRate;
+      if (_.isNumber(params.feeRate) || _.isNumber(params.originalFeeRate)) {
+        return (!_.isUndefined(params.feeRate) ? params.feeRate : params.originalFeeRate);
       } else {
         return bitgo.estimateFee({
           numBlocks: params.feeTxConfirmTarget,
