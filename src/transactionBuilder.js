@@ -64,6 +64,9 @@ exports.createTransaction = function(params) {
     throw new Error('invalid argument');
   }
 
+  const loggingParams = _.omit(params, ['walletPassphrase', 'xprv']);
+  console.log("params at start createTransaction:\n" + JSON.stringify(loggingParams, null, 4));
+
   const bitgo = params.wallet.bitgo;
   const constants = bitgo.getConstants();
 
@@ -249,10 +252,13 @@ exports.createTransaction = function(params) {
         if (estimatedFeeRate < minimum) {
           console.log(new Date() + ': Error when estimating fee for send from ' + params.wallet.id() + ', it was too low - ' + estimatedFeeRate);
           feeRate = minimum + padding;
+          console.log("feeRate was updated to minFeeRate " + feeRate);
         } else if (estimatedFeeRate > params.maxFeeRate) {
           feeRate = params.maxFeeRate - padding;
+          console.log("feeRate was updated to maxFeeRate " + feeRate);
         } else {
           feeRate = estimatedFeeRate;
+          console.log("feeRate was updated to estimatedFeeRate " + feeRate);
         }
         return feeRate;
       })
@@ -361,17 +367,26 @@ exports.createTransaction = function(params) {
     return Promise.try(function() {
 
       if (_.isNumber(params.feeRate) || _.isNumber(params.originalFeeRate)) {
-        return (!_.isUndefined(params.feeRate) ? params.feeRate : params.originalFeeRate);
+        if(!_.isUndefined(params.feeRate)) {
+          console.log("collectInputs: params.feeRate: "+ params.feeRate);
+          return params.feeRate;
+        } else {
+          console.log("collectInputs: params.feeRate was undefined, so it was replaced with params.originalFeeRate: "+ params.originalFeeRate);
+          return params.originalFeeRate;
+        }
       } else {
+        console.log("collectInputs: params.feeRate and params.originalFeeRate undefined, getting new estimate");
         return bitgo.estimateFee({
           numBlocks: params.feeTxConfirmTarget,
           maxFee: params.maxFeeRate
         })
         .then(function(feeRateEstimate) {
+          console.log("collectInputs feeRateEstimate.feePerKb is: " + feeRateEstimate.feePerKb);
           return feeRateEstimate.feePerKb;
         });
       }
     }).then(function(feeRate) {
+      console.log("collectInputs resulting feeRate is:" + feeRate);
       // Don't spend inputs that cannot pay for their own cost.
       let minInputValue = 0;
       if (_.isInteger(params.minUnspentSize)) {
@@ -455,6 +470,7 @@ exports.createTransaction = function(params) {
       });
     }).then(getDynamicFeeRateEstimate)
     .then(function() {
+      console.log("feeRate before calculateMinerFeeInfo: " + feeRate);
       minerFeeInfo = exports.calculateMinerFeeInfo({
         bitgo: params.wallet.bitgo,
         feeRate: feeRate,
@@ -463,6 +479,7 @@ exports.createTransaction = function(params) {
         nP2PKHInputs: txInfo.nP2PKHInputs,
         nOutputs: txInfo.nOutputs
       });
+      console.log("minerFeeInfo.feeRate: " + minerFeeInfo.feeRate);
 
       if (shouldComputeBestFee) {
         const approximateFee = minerFeeInfo.fee;

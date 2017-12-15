@@ -1574,6 +1574,9 @@ Wallet.prototype.consolidateUnspents = function(params, callback) {
     }
   }
 
+  const loggingParams = _.omit(params, ['walletPassphrase', 'xprv']);
+  console.log("params at start consolidateUnspents:\n" + JSON.stringify(loggingParams, null, 4));
+
   let iterationCount = 0;
 
   const self = this;
