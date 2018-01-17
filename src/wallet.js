@@ -31,6 +31,8 @@ const Wallet = function(bitgo, wallet) {
   if (wallet.private) {
     this.keychains = wallet.private.keychains;
   }
+
+  this.version = 1;
 };
 
 Wallet.prototype.toJSON = function() {

@@ -11,6 +11,7 @@ const Wallet = function(bitgo, baseCoin, walletData) {
   this.bitgo = bitgo;
   this.baseCoin = baseCoin;
   this._wallet = walletData;
+  this.version = 2;
 };
 
 Wallet.prototype.url = function(extra) {

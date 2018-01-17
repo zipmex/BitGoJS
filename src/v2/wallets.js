@@ -68,12 +68,22 @@ Wallets.prototype.list = function(params, callback) {
       queryObject.allTokens = params.allTokens;
     }
 
+    if (params.fetchV1) {
+      if (!_.isBoolean(params.fetchV1)) {
+        throw new Error(`invalid fetchV1 argument, expecting boolean (got ${params.fetchV1}, type ${typeof params.fetchV1})`);
+      }
+    }
+
     const self = this;
     const body = yield this.bitgo.get(this.baseCoin.url('/wallet')).query(queryObject).result();
 
     body.wallets = body.wallets.map(function(w) {
       return new self.coinWallet(self.bitgo, self.baseCoin, w);
     });
+
+    if (params.fetchV1) {
+
+    }
 
     return body;
   }).call(this).asCallback(callback);
