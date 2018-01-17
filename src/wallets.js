@@ -63,6 +63,7 @@ Wallets.prototype.list = function(params, callback) {
   .result()
   .then(function(body) {
     body.wallets = body.wallets.map(function(w) { return new Wallet(self.bitgo, w); });
+    console.log('This is body wallets', body.wallets);
     return body;
   })
   .nodeify(callback);

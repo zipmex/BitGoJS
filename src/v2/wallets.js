@@ -73,6 +73,10 @@ Wallets.prototype.list = function(params, callback) {
       if (!_.isBoolean(params.fetchV1)) {
         throw new Error(`invalid fetchV1 argument, expecting boolean (got ${params.fetchV1}, type ${typeof params.fetchV1})`);
       }
+
+      if (this.baseCoin.getFamily() !== 'btc') {
+        throw new Error(`fetchV1 argument can only be used for BTC.`);
+      }
     }
 
     const self = this;
@@ -87,10 +91,10 @@ Wallets.prototype.list = function(params, callback) {
     // Used for a combined V1/V2 wallets list
     if (params.fetchV1) {
       // Call V1 API to list all wallets
-      const bodyV1 = yield WalletsV1.list();
+      const bodyV1 = yield this.bitgo.wallets().list();
 
       // Zip up two lists based on created on date
-      result = result.concat(bodyV1);
+      result.wallets = result.wallets.concat(bodyV1.wallets);
     }
 
     return result;
