@@ -5,6 +5,7 @@ const Promise = require('bluebird');
 const co = Promise.coroutine;
 const _ = require('lodash');
 const RmgCoin = require('./coins/rmg');
+const WalletsV1 = require('../wallets');
 
 const Wallets = function(bitgo, baseCoin) {
   this.bitgo = bitgo;
@@ -81,11 +82,18 @@ Wallets.prototype.list = function(params, callback) {
       return new self.coinWallet(self.bitgo, self.baseCoin, w);
     });
 
-    if (params.fetchV1) {
+    let result = body;
 
+    // Used for a combined V1/V2 wallets list
+    if (params.fetchV1) {
+      // Call V1 API to list all wallets
+      const bodyV1 = yield WalletsV1.list();
+
+      // Zip up two lists based on created on date
+      result = result.concat(bodyV1);
     }
 
-    return body;
+    return result;
   }).call(this).asCallback(callback);
 };
 
