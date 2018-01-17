@@ -32,52 +32,51 @@ Wallets.prototype.get = function(params, callback) {
  * @returns {*}
  */
 Wallets.prototype.list = function(params, callback) {
-  params = params || {};
-  common.validateParams(params, [], [], callback);
+  return co(function *() {
+    params = params || {};
+    common.validateParams(params, [], [], callback);
 
-  const queryObject = {};
+    const queryObject = {};
 
-  if (params.skip && params.prevId) {
-    throw new Error('cannot specify both skip and prevId');
-  }
-
-  if (params.getbalances) {
-    if (!_.isBoolean(params.getbalances)) {
-      throw new Error('invalid getbalances argument, expecting boolean');
+    if (params.skip && params.prevId) {
+      throw new Error('cannot specify both skip and prevId');
     }
-    queryObject.getbalances = params.getbalances;
-  }
-  if (params.prevId) {
-    if (!_.isString(params.prevId)) {
-      throw new Error('invalid prevId argument, expecting string');
-    }
-    queryObject.prevId = params.prevId;
-  }
-  if (params.limit) {
-    if (!_.isNumber(params.limit)) {
-      throw new Error('invalid limit argument, expecting number');
-    }
-    queryObject.limit = params.limit;
-  }
 
-  if (params.allTokens) {
-    if (!_.isBoolean(params.allTokens)) {
-      throw new Error('invalid allTokens argument, expecting boolean');
+    if (params.getbalances) {
+      if (!_.isBoolean(params.getbalances)) {
+        throw new Error('invalid getbalances argument, expecting boolean');
+      }
+      queryObject.getbalances = params.getbalances;
     }
-    queryObject.allTokens = params.allTokens;
-  }
+    if (params.prevId) {
+      if (!_.isString(params.prevId)) {
+        throw new Error('invalid prevId argument, expecting string');
+      }
+      queryObject.prevId = params.prevId;
+    }
+    if (params.limit) {
+      if (!_.isNumber(params.limit)) {
+        throw new Error('invalid limit argument, expecting number');
+      }
+      queryObject.limit = params.limit;
+    }
 
-  const self = this;
-  return this.bitgo.get(this.baseCoin.url('/wallet'))
-  .query(queryObject)
-  .result()
-  .then(function(body) {
+    if (params.allTokens) {
+      if (!_.isBoolean(params.allTokens)) {
+        throw new Error('invalid allTokens argument, expecting boolean');
+      }
+      queryObject.allTokens = params.allTokens;
+    }
+
+    const self = this;
+    const body = yield this.bitgo.get(this.baseCoin.url('/wallet')).query(queryObject).result();
+
     body.wallets = body.wallets.map(function(w) {
       return new self.coinWallet(self.bitgo, self.baseCoin, w);
     });
+
     return body;
-  })
-  .nodeify(callback);
+  }).call(this).asCallback(callback);
 };
 
 /**
