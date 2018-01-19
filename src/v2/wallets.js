@@ -95,11 +95,16 @@ Wallets.prototype.list = function(params, callback) {
  * INTERNAL FUNCTION ONLY - DO NOT USE
  * WILL BE DEPRECATED AFTER V2 MIGRATION
  *
- * List a user's wallets across both V1 and V2
+ * List a user's wallets across both V1 and V2 - BTC only
  * Will not return fully usable wallet objects since V1 and V2 wallets are different models.
  * Should only be used to display a merged list of wallets - pagination is enabled with limit and prevId
  * @param {Object] params
- * @param {boolean} params.getbalances - whether to add balances to the wallet info
+ * @param {Boolean} params.getbalances - whether to add balances to the wallet info
+ * @param {Number} params.prevIdVersion - the version to start looking within. In pagination scenarios, response
+ *  will give nextBatchVersion - this should be passed into prevIdVersion (even if there is no prevId, for instance
+ *  when we need to start looking from the beginning of V1)
+ * @param {String} params.prevId - the last ID in the last result (used for pagination, gives starting point)
+ * @param {Number} params.limit - the number of wallets to fetch
  * @param callback
  * @returns {*}
  */
@@ -142,6 +147,7 @@ Wallets.prototype.internalListMerged = function(params, callback) {
 
       queryObject.prevId = params.prevId;
     }
+
     if (params.limit) {
       if (!_.isNumber(params.limit)) {
         throw new Error('invalid limit argument, expecting number');
