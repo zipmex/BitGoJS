@@ -99,7 +99,7 @@ Wallets.prototype.list = function(params, callback) {
  * Will not return fully usable wallet objects since V1 and V2 wallets are different models.
  * Should only be used to display a merged list of wallets - pagination is enabled with limit and prevId
  * @param {Object] params
- * @param {boolean} getBalances - whether to add balances to the wallet info
+ * @param {boolean} params.getbalances - whether to add balances to the wallet info
  * @param callback
  * @returns {*}
  */
@@ -118,13 +118,13 @@ Wallets.prototype.internalListMerged = function(params, callback) {
       throw new Error('skip not supported for merged wallets list');
     }
 
-    if (params.nextBatchVersion) {
-      if (!_.isNumber(params.nextBatchVersion)) {
-        throw new Error(`nextBatchVersion must be a number, got ${params.nextBatchVersion} (type ${typeof params.nextBatchVersion})`);
+    if (params.prevIdVersion) {
+      if (!_.isNumber(params.prevIdVersion)) {
+        throw new Error(`prevIdVersion must be a number, got ${params.prevIdVersion} (type ${typeof params.prevIdVersion})`);
       }
 
-      if (params.nextBatchVersion !== 1 && params.nextBatchVersion !== 2) {
-        throw new Error('nextBatchVersion can only be 1 or 2');
+      if (params.prevIdVersion !== 1 && params.prevIdVersion !== 2) {
+        throw new Error('prevIdVersion can only be 1 or 2');
       }
     }
 
@@ -149,40 +149,47 @@ Wallets.prototype.internalListMerged = function(params, callback) {
       queryObject.limit = params.limit;
     }
 
-    const body = yield this.bitgo.get(this.baseCoin.url('/wallet')).query(queryObject).result();
+    const result = { wallets: [] };
 
-    body.wallets = body.wallets.map((w) => new this.coinWallet(this.bitgo, this.baseCoin, w));
+    if (!params.prevIdVersion || params.prevIdVersion === 2) {
+      // We have a prevId in version 2 (or no prevId), so query v2 API
+      const body = yield this.bitgo.get(this.baseCoin.url('/wallet')).query(queryObject).result();
+      body.wallets = body.wallets.map((w) => new this.coinWallet(this.bitgo, this.baseCoin, w));
+      result.wallets = result.wallets.concat(body.wallets);
 
-    if (queryObject.limit) {
+      // Check v2 results against limit
+      if (queryObject.limit) {
 
-      // If we fulfilled limit, check if next batch will be V1 or V2
-      if (body.wallets.length === queryObject.limit) {
-        if (body.nextBatchPrevId) {
-          // We got a nextBatchPrevId, so there are more v2 wallets - just mark the version and return body
-          body.nextBatchVersion = 2;
-          return body;
+        // If we fulfilled limit, check if next batch will be V1 or V2
+        if (body.wallets.length === queryObject.limit) {
+          if (body.nextBatchPrevId) {
+            // We got a nextBatchPrevId, so there are more v2 wallets - just mark the version and return body
+            result.nextBatchPrevId = body.nextBatchPrevId;
+            result.nextBatchVersion = 2;
+            return result;
+          }
+
+          // v2 wallets fulfilled the limit, so check if there are any v1, and if so, mark nextBatchVersion as 1
+          // In this case, there will only be nextBatchVersion - NOT nextBatchPrevId
+          queryObject.limit = 1;
+          const v1Body = yield this.bitgo.get(this.bitgo.url('/wallet')).query(queryObject).result();
+
+          // There are more wallets in v1, so flag there's a next batch in v1
+          if (v1Body.wallets.length > 0) {
+            result.nextBatchVersion = 1;
+          }
+
+          return result;
         }
 
-        // v2 wallets fulfilled the limit, so check if there are any v1, and if so, mark nextBatchVersion as 1
-        // In this case, there will only be nextBatchVersion - NOT nextBatchPrevId
-        queryObject.limit = 1;
-        const v1Body = yield this.bitgo.get(this.bitgo.url('/wallet')).query(queryObject).result();
-
-        if (v1Body.wallets.length > 0) {
-          body.nextBatchVersion = 1;
-        }
-
-        return body;
+        // If we haven't fulfilled limit and we're done with V2, fetch V1 wallets
+        const remainingLimit = queryObject.limit - body.wallets.length;
+        queryObject.limit = remainingLimit;
       }
 
-      // If we haven't fulfilled limit and we're done with V2, fetch V1 wallets
-      const remainingLimit = queryObject.limit - body.wallets.length;
-      queryObject.limit = remainingLimit;
+      delete queryObject.prevId;
     }
 
-    delete queryObject.prevId;
-
-    const result = { wallets: body.wallets };
 
     const v1Body = yield this.bitgo.get(this.bitgo.url('/wallet')).query(queryObject).result();
     v1Body.wallets = v1Body.wallets.map((w) => new WalletV1(this.bitgo, w));
