@@ -5,7 +5,7 @@ const Promise = require('bluebird');
 const co = Promise.coroutine;
 const _ = require('lodash');
 const RmgCoin = require('./coins/rmg');
-const WalletsV1 = require('../wallets');
+const WalletV1 = require('../wallet');
 
 const Wallets = function(bitgo, baseCoin) {
   this.bitgo = bitgo;
@@ -33,14 +33,99 @@ Wallets.prototype.get = function(params, callback) {
  * @returns {*}
  */
 Wallets.prototype.list = function(params, callback) {
+  params = params || {};
+  common.validateParams(params, [], [], callback);
+
+  const queryObject = {};
+
+  if (params.skip && params.prevId) {
+    throw new Error('cannot specify both skip and prevId');
+  }
+
+  if (params.getbalances) {
+    if (!_.isBoolean(params.getbalances)) {
+      throw new Error('invalid getbalances argument, expecting boolean');
+    }
+    queryObject.getbalances = params.getbalances;
+  }
+  if (params.prevId) {
+    if (!_.isString(params.prevId)) {
+      throw new Error('invalid prevId argument, expecting string');
+    }
+    queryObject.prevId = params.prevId;
+  }
+  if (params.limit) {
+    if (!_.isNumber(params.limit)) {
+      throw new Error('invalid limit argument, expecting number');
+    }
+    queryObject.limit = params.limit;
+  }
+
+  if (params.allTokens) {
+    if (!_.isBoolean(params.allTokens)) {
+      throw new Error('invalid allTokens argument, expecting boolean');
+    }
+    queryObject.allTokens = params.allTokens;
+  }
+
+  if (params.fetchV1 && !_.isBoolean(params.fetchV1)) {
+    throw new Error(`fetchV1 must be a boolean, got ${params.fetchV1} (type ${typeof params.fetchV1})`);
+  }
+
+  if (params.fetchV1) {
+    return this.internalListMerged(params, callback);
+  }
+
+  const self = this;
+  return this.bitgo.get(this.baseCoin.url('/wallet'))
+  .query(queryObject)
+  .result()
+  .then(function(body) {
+    body.wallets = body.wallets.map(function(w) {
+      return new self.coinWallet(self.bitgo, self.baseCoin, w);
+    });
+    return body;
+  })
+  .nodeify(callback);
+};
+
+
+
+/**
+ * INTERNAL FUNCTION ONLY - DO NOT USE
+ * WILL BE DEPRECATED AFTER V2 MIGRATION
+ *
+ * List a user's wallets across both V1 and V2
+ * Will not return fully usable wallet objects since V1 and V2 wallets are different models.
+ * Should only be used to display a merged list of wallets - pagination is enabled with limit and prevId
+ * @param {Object] params
+ * @param {boolean} getBalances - whether to add balances to the wallet info
+ * @param callback
+ * @returns {*}
+ */
+Wallets.prototype.internalListMerged = function(params, callback) {
   return co(function *() {
     params = params || {};
     common.validateParams(params, [], [], callback);
 
+    if (this.baseCoin.getFamily() !== 'btc') {
+      throw new Error('Can only get merged wallets list for btc');
+    }
+
     const queryObject = {};
 
-    if (params.skip && params.prevId) {
-      throw new Error('cannot specify both skip and prevId');
+    if (params.skip) {
+      throw new Error('skip not supported for merged wallets list');
+    }
+
+    if (params.nextBatchVersion) {
+      if (!_.isNumber(params.nextBatchVersion)) {
+        throw new Error(`nextBatchVersion must be a number, got ${params.nextBatchVersion} (type ${typeof params.nextBatchVersion})`);
+      }
+
+      if (params.nextBatchVersion !== 1 && params.nextBatchVersion !== 2) {
+        throw new Error('nextBatchVersion can only be 1 or 2');
+      }
     }
 
     if (params.getbalances) {
@@ -49,10 +134,12 @@ Wallets.prototype.list = function(params, callback) {
       }
       queryObject.getbalances = params.getbalances;
     }
+
     if (params.prevId) {
       if (!_.isString(params.prevId)) {
         throw new Error('invalid prevId argument, expecting string');
       }
+
       queryObject.prevId = params.prevId;
     }
     if (params.limit) {
@@ -62,44 +149,55 @@ Wallets.prototype.list = function(params, callback) {
       queryObject.limit = params.limit;
     }
 
-    if (params.allTokens) {
-      if (!_.isBoolean(params.allTokens)) {
-        throw new Error('invalid allTokens argument, expecting boolean');
-      }
-      queryObject.allTokens = params.allTokens;
-    }
-
-    if (params.fetchV1) {
-      if (!_.isBoolean(params.fetchV1)) {
-        throw new Error(`invalid fetchV1 argument, expecting boolean (got ${params.fetchV1}, type ${typeof params.fetchV1})`);
-      }
-
-      if (this.baseCoin.getFamily() !== 'btc') {
-        throw new Error(`fetchV1 argument can only be used for BTC.`);
-      }
-    }
-
-    const self = this;
     const body = yield this.bitgo.get(this.baseCoin.url('/wallet')).query(queryObject).result();
 
-    body.wallets = body.wallets.map(function(w) {
-      return new self.coinWallet(self.bitgo, self.baseCoin, w);
-    });
+    body.wallets = body.wallets.map((w) => new this.coinWallet(this.bitgo, this.baseCoin, w));
 
-    let result = body;
+    if (queryObject.limit) {
 
-    // Used for a combined V1/V2 wallets list
-    if (params.fetchV1) {
-      // Call V1 API to list all wallets
-      const bodyV1 = yield this.bitgo.wallets().list();
+      // If we fulfilled limit, check if next batch will be V1 or V2
+      if (body.wallets.length === queryObject.limit) {
+        if (body.nextBatchPrevId) {
+          // We got a nextBatchPrevId, so there are more v2 wallets - just mark the version and return body
+          body.nextBatchVersion = 2;
+          return body;
+        }
 
-      // Zip up two lists based on created on date
-      result.wallets = result.wallets.concat(bodyV1.wallets);
+        // v2 wallets fulfilled the limit, so check if there are any v1, and if so, mark nextBatchVersion as 1
+        // In this case, there will only be nextBatchVersion - NOT nextBatchPrevId
+        queryObject.limit = 1;
+        const v1Body = yield this.bitgo.get(this.bitgo.url('/wallet')).query(queryObject).result();
+
+        if (v1Body.wallets.length > 0) {
+          body.nextBatchVersion = 1;
+        }
+
+        return body;
+      }
+
+      // If we haven't fulfilled limit and we're done with V2, fetch V1 wallets
+      const remainingLimit = queryObject.limit - body.wallets.length;
+      queryObject.limit = remainingLimit;
+    }
+
+    delete queryObject.prevId;
+
+    const result = { wallets: body.wallets };
+
+    const v1Body = yield this.bitgo.get(this.bitgo.url('/wallet')).query(queryObject).result();
+    v1Body.wallets = v1Body.wallets.map((w) => new WalletV1(this.bitgo, w));
+
+    // Concatenate both lists, so V2 comes first
+    result.wallets = result.wallets.concat(v1Body.wallets);
+
+    if (v1Body.nextBatchPrevId) {
+      result.nextBatchPrevId = v1Body.nextBatchPrevId;
+      result.nextBatchVersion = 1;
     }
 
     return result;
   }).call(this).asCallback(callback);
-};
+}
 
 /**
 * add
