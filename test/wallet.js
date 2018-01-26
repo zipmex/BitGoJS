@@ -18,6 +18,8 @@ const _ = require('lodash');
 const bitcoin = BitGoJS.bitcoin;
 const Promise = require('bluebird');
 const co = Promise.coroutine;
+const nock = require('nock');
+nock.enableNetConnect();
 
 Q.longStackTrace = true;
 
@@ -77,6 +79,10 @@ describe('Wallet API', function() {
         });
       });
     });
+  });
+
+  after(function() {
+    nock.cleanAll();
   });
 
   describe('Invite non BitGo user', function() {
@@ -2515,6 +2521,102 @@ describe('Wallet API', function() {
         });
       });
     });
+  });
+
+  describe('Accelerate Transaction', function() {
+    let bitgo;
+    let wallet;
+
+    before(function() {
+      nock('https://bitgo.fakeurl/api/v1')
+        .get(`/client/constants`)
+        .reply(200, { ttl: 3600, constants: {} });
+      bitgo = new TestBitGo({ env: 'mock' });
+      bitgo.initializeTestVars();
+      wallet = bitgo.newWalletObject({ id: '2N76BgbTnLJz9WWbXw15gp6K9mE5wrP4JFb' });
+    });
+
+    it('arguments', co(function *() {
+      try {
+        yield wallet.accelerateTransaction({ fee: 123});
+        throw new Error();
+      } catch (e) {
+        e.message.should.include('Missing parameter: transactionID');
+      }
+
+      try {
+        yield wallet.accelerateTransaction({ transactionID: 123, fee: 123});
+        throw new Error();
+      } catch (e) {
+        e.message.should.include('Expecting parameter string: transactionID');
+      }
+
+      try {
+        yield wallet.accelerateTransaction({ transactionID: '123'});
+        throw new Error();
+      } catch (e) {
+        e.message.should.include('Missing parameter: fee');
+      }
+
+      const feesParams = ['123', 0, -10, 423.234, -Infinity, Infinity, NaN];
+
+      for (const fee of feesParams) {
+        try {
+          yield wallet.accelerateTransaction({ transactionID: '123', fee: fee });
+          throw new Error(`fee value ${fee} should have thrown but did not!`);
+        } catch (e) {
+          e.message.should.include('Expecting parameter positive finite integer: fee');
+        }
+      }
+
+    }));
+
+    describe('bad input', function() {
+      const txID = 'af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648';
+
+      it('non existant transaction ID', co(function *() {
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+          .get(`/${wallet.id()}/tx/${txID}`)
+          .reply(404, 'transaction not found on this wallet');
+        try {
+          yield wallet.accelerateTransaction({ transactionID: txID, fee: 123 });
+          throw new Error();
+        } catch (e) {
+          e.message.should.include('transaction not found on this wallet');
+        }
+      }));
+
+      it('confirmed transaction', co(function *() {
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+          .get(`/${wallet.id()}/tx/${txID}`)
+          .reply(200, {
+            confirmations: 6
+          });
+        try {
+          yield wallet.accelerateTransaction({ transactionID: txID, fee: 2000});
+          throw new Error();
+        } catch (e) {
+          e.message.should.include(`can't accelerate already confirmed transaction`);
+        }
+      }));
+
+      it('', co(function *() {
+
+      }));
+    });
+
+    //
+    // describe('bad input', function() {
+    //
+    //   wallet1.accelerateTransaction({ transactionID: '123', fee: 123 })
+    //     .then(function(result) {
+    //       throw new Error('Unexpected result - expected to catch transaction not belonging to wallet');
+    //     })
+    //     .catch(function(err) {
+    //       err.message.should.include('transaction not found on this wallet');
+    //       // return wallet1.accelerateTransaction({ transactionID: '40430658392ae3aaca811f3948b9ba0106227eb2f24fea778197092ca0902142', fee: 123 });
+    //     });
+    // });
   });
 
   describe('Create and Send Transactions (advanced)', function() {

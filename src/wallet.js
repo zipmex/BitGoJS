@@ -892,7 +892,6 @@ Wallet.prototype.createTransaction = function(params, callback) {
   .nodeify(callback);
 };
 
-
 //
 // signTransaction
 // Sign a previously created transaction with a keychain
@@ -1193,6 +1192,24 @@ Wallet.prototype.sendMany = function(params, callback) {
     return finalResult;
   })
   .nodeify(callback);
+};
+
+Wallet.prototype.accelerateTransaction = function(params, callback) {
+  return co(function *() {
+    params = params || {};
+    common.validateParams(params, ['transactionID'], [], callback);
+
+    if (_.isUndefined(params.fee)) {
+      throw new Error('Missing parameter: fee');
+    }
+    if (!_.isFinite(params.fee) || !_.isInteger(params.fee) || params.fee <= 0) {
+      throw new Error('Expecting parameter positive finite integer: fee');
+    }
+    const parentTx = yield this.getTransaction({ id: params.transactionID });
+    if (parentTx.confirmations > 0) {
+      throw new Error(`can't accelerate already confirmed transaction`);
+    }
+  }).call(this).asCallback(callback);
 };
 
 //
