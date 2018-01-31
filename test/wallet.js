@@ -3761,16 +3761,16 @@ describe('Wallet Prototype Methods', function() {
           feePerKb: 0
         });
 
-        nock('https://bitgo.fakeurl/api/v1/wallet')
-        .get(`${wallet.id()}?gpk=true`)
+        nock('https://bitgo.fakeurl/api/v1')
+        .post(`/tx/send`)
         .reply(200, {
-          feePerKb: 0
+          status: 'accepted'
         });
 
         const childTx = yield wallet.accelerateTransaction({ transactionID: txID, feeRate });
 
         // verify childTx
-        should(childTx).exist();
+        should(childTx).exist;
         childTx.should.have.property('status', 'accepted');
       }));
     });
