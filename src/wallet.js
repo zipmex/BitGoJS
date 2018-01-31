@@ -1195,20 +1195,103 @@ Wallet.prototype.sendMany = function(params, callback) {
 };
 
 Wallet.prototype.accelerateTransaction = function(params, callback) {
+  // possible params:
+  // 1) Max inputs for child tx
   return co(function *() {
     params = params || {};
     common.validateParams(params, ['transactionID'], [], callback);
 
-    if (_.isUndefined(params.fee)) {
-      throw new Error('Missing parameter: fee');
+    if (_.isUndefined(params.feeRate)) {
+      throw new Error('Missing parameter: feeRate');
     }
-    if (!_.isFinite(params.fee) || !_.isInteger(params.fee) || params.fee <= 0) {
-      throw new Error('Expecting parameter positive finite integer: fee');
+    if (!_.isFinite(params.feeRate) || !_.isInteger(params.feeRate) || params.feeRate <= 0) {
+      throw new Error('Expecting parameter positive finite integer: feeRate');
     }
     const parentTx = yield this.getTransaction({ id: params.transactionID });
     if (parentTx.confirmations > 0) {
       throw new Error(`can't accelerate already confirmed transaction`);
     }
+
+    const selfOutputs = [];
+    const outputs = parentTx.outputs;
+    for (const output of outputs) {
+      if (output.isMine) {
+        selfOutputs.push(output);
+      }
+    }
+
+    if (selfOutputs.length === 0) {
+      throw new Error(`No outputs back to own wallet in parent transaction`);
+    }
+
+    const isSegwit = this.getChangeChain({}) === CHANGE_CHAIN_SEGWIT;
+
+    const nChildP2SHInputs = isSegwit ? 0 : 1;
+    const nChildSegwitInputs = isSegwit ? 1 : 0;
+
+    const childFeeInfo = TransactionBuilder.calculateMinerFeeInfo({
+      nP2SHInputs: nChildP2SHInputs,
+      nP2PKHInputs: 0,
+      nP2SHP2WSHInputs: nChildSegwitInputs,
+      nOutputs: 1,
+      feeRate: 1
+    });
+
+    const parentSize = parentTx.hex.length / 2;
+    const combinedSize = parentSize + childFeeInfo.size;
+    const combinedFee = combinedSize * params.feeRate;
+    const childFee = combinedFee - parentTx.fee;
+
+    let outputToUse;
+    for (const output of outputs) {
+      if (output.value > childFee) {
+        outputToUse = output;
+      }
+    }
+
+    if (_.isUndefined(outputToUse)) {
+      // TODO: need to add another unspent to cover child fees, then recalculate total combined fee and child fee
+      throw new Error(`No outputs back to own wallet in parent with enough funds to cover child fee`);
+    }
+
+    const address = outputToUse.account;
+    const output_number = outputToUse.vout;
+    const unspentsResult = yield this.bitgo.blockchain().getAddressUnspents({ address });
+
+    const unspentToUse = _.find(unspentsResult, function (unspent) {
+      // make sure unspent belongs to the given txid
+      if (unspent.tx_hash !== params.transactionID) {
+        return false;
+      }
+      // make sure unspent has correct v_out index
+      return unspent.tx_output_n === output_number;
+    });
+
+    if (_.isUndefined(unspentToUse)) {
+
+      // better error message would be: could not find unspent change output from parent tx to use as child input
+      throw new Error(`Could not find unspent for output`);
+    }
+
+    // create new change address for child tx
+    const changeChain = this.getChangeChain({});
+    const changeAddress = yield this.createAddress({ chain: changeChain });
+
+    // create tx using unspentToUse as input
+    const tx = yield this.createTransaction({
+      unspents: [unspentToUse],
+      recipients: [
+        {
+          address: changeAddress.address,
+          amount: outputToUse.value - childFee
+        }
+      ],
+      fee: childFee,
+      changeAddress: changeAddress.address
+    });
+
+    // put tx on the send queue for broadcast
+    return this.sendTransaction({ tx: tx.transactionHex });
   }).call(this).asCallback(callback);
 };
 

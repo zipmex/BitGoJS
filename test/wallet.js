@@ -2523,102 +2523,6 @@ describe('Wallet API', function() {
     });
   });
 
-  describe('Accelerate Transaction', function() {
-    let bitgo;
-    let wallet;
-
-    before(function() {
-      nock('https://bitgo.fakeurl/api/v1')
-        .get(`/client/constants`)
-        .reply(200, { ttl: 3600, constants: {} });
-      bitgo = new TestBitGo({ env: 'mock' });
-      bitgo.initializeTestVars();
-      wallet = bitgo.newWalletObject({ id: '2N76BgbTnLJz9WWbXw15gp6K9mE5wrP4JFb' });
-    });
-
-    it('arguments', co(function *() {
-      try {
-        yield wallet.accelerateTransaction({ fee: 123});
-        throw new Error();
-      } catch (e) {
-        e.message.should.include('Missing parameter: transactionID');
-      }
-
-      try {
-        yield wallet.accelerateTransaction({ transactionID: 123, fee: 123});
-        throw new Error();
-      } catch (e) {
-        e.message.should.include('Expecting parameter string: transactionID');
-      }
-
-      try {
-        yield wallet.accelerateTransaction({ transactionID: '123'});
-        throw new Error();
-      } catch (e) {
-        e.message.should.include('Missing parameter: fee');
-      }
-
-      const feesParams = ['123', 0, -10, 423.234, -Infinity, Infinity, NaN];
-
-      for (const fee of feesParams) {
-        try {
-          yield wallet.accelerateTransaction({ transactionID: '123', fee: fee });
-          throw new Error(`fee value ${fee} should have thrown but did not!`);
-        } catch (e) {
-          e.message.should.include('Expecting parameter positive finite integer: fee');
-        }
-      }
-
-    }));
-
-    describe('bad input', function() {
-      const txID = 'af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648';
-
-      it('non existant transaction ID', co(function *() {
-        nock('https://bitgo.fakeurl/api/v1/wallet')
-          .get(`/${wallet.id()}/tx/${txID}`)
-          .reply(404, 'transaction not found on this wallet');
-        try {
-          yield wallet.accelerateTransaction({ transactionID: txID, fee: 123 });
-          throw new Error();
-        } catch (e) {
-          e.message.should.include('transaction not found on this wallet');
-        }
-      }));
-
-      it('confirmed transaction', co(function *() {
-        nock('https://bitgo.fakeurl/api/v1/wallet')
-          .get(`/${wallet.id()}/tx/${txID}`)
-          .reply(200, {
-            confirmations: 6
-          });
-        try {
-          yield wallet.accelerateTransaction({ transactionID: txID, fee: 2000});
-          throw new Error();
-        } catch (e) {
-          e.message.should.include(`can't accelerate already confirmed transaction`);
-        }
-      }));
-
-      it('', co(function *() {
-
-      }));
-    });
-
-    //
-    // describe('bad input', function() {
-    //
-    //   wallet1.accelerateTransaction({ transactionID: '123', fee: 123 })
-    //     .then(function(result) {
-    //       throw new Error('Unexpected result - expected to catch transaction not belonging to wallet');
-    //     })
-    //     .catch(function(err) {
-    //       err.message.should.include('transaction not found on this wallet');
-    //       // return wallet1.accelerateTransaction({ transactionID: '40430658392ae3aaca811f3948b9ba0106227eb2f24fea778197092ca0902142', fee: 123 });
-    //     });
-    // });
-  });
-
   describe('Create and Send Transactions (advanced)', function() {
     let keychain;
     let tx;
@@ -3184,7 +3088,12 @@ describe('Wallet Prototype Methods', function() {
     });
 
     it('generate segwit address with custom keyset and threshold', function() {
-      const segwitAddress = fakeWallet.generateAddress({ path: '/10/0', segwit: true, keychains: keychains, threshold: 4 });
+      const segwitAddress = fakeWallet.generateAddress({
+        path: '/10/0',
+        segwit: true,
+        keychains: keychains,
+        threshold: 4
+      });
       segwitAddress.address.should.equal('2MvQXRwq3AXNMXSKQkJuP81Ye5cah4hytxU');
       segwitAddress.chain.should.equal(10);
       segwitAddress.index.should.equal(0);
@@ -3231,7 +3140,6 @@ describe('Wallet Prototype Methods', function() {
       p2shAddress.redeemScript.should.equal('542102cd3c8e6006a4627705021d1d016d097c2944d98100a47bf2da67a5fe15aeeb342102ee1fa9e812e779356aa3c31ebf317d0cffebab92864cfe38bab223e0820f98bc21026ba05752baa6eafd5c5659da62b7f0ac51fd2886b65c241d0afef1c4fdfa1cbc21038c80e64d61f7e9a6d36a9dbb86e40288e9aac60f1a33bb47bff9c3a1336a510121032c64677912d511571907444c82fd1abd4807ebef327e2f7bfe41f1951ca8190d55ae');
       p2shAddress.wallet.should.equal(fakeWallet.id());
     });
-
   });
 
   describe('Create Transaction', function() {
@@ -3602,6 +3510,270 @@ describe('Wallet Prototype Methods', function() {
       signature2.tx.should.equal('010000000001027c75f8b4061212ec4669ef10c7a85a6bd8b677e74ecffef72df1e35b0ace54f601000000fdfd000047304402206b92ff7c1b4381fd7279cd263f1e8f41dee8c892b9405633f3274e0e795a4add02205ad4eab4a1f716fa4e5d8681bb38525b0c1d140a2f155c2031f063651812840701483045022100c21634dc6b9915d42a97f7dee53902a9dc40cdc9f29a1a9eeb726328187bcc2202205e2b3782f11a5246d2773581c926bae1aaebdfab1d9a33d176e4e50d531a652d014c69522103da95b28a13aa2d4bb490d70628e2e5d912461d375fef381aadd89dc1256220752103121287a510c5f32e8ba72d2479e90eb52ba44a467173df339feb0ff215f100e32102977cdfbee76066ae739db72d55371ad49dc6712fb8f2f3f69bb1a4c2422b0b1a53aeffffffff249f4f3b89110526e9d71f33679c5303dbf00ef43dac90b867ae2f043f9c40a400000000232200208b91aa03eb0f7f31e3917088084168ba5282a915e7cde0a5a934b7ea02eb057bffffffff030084d71700000000206a1e426974476f206d6978656420703273682026207365677769742074657374e28ff9020000000017a9148153e7a35508088b6cf599226792c7de2dbff25287603f01000000000017a914d9f7be47975c036f94228b0bfd70701912758ba987000400473044022022780c8721d54c6b128e96f43fd2a48c96956efd1b659cdf1ad2ebfe0974cc4b022016f2e9b3f017aef95dba9bccca02d4c8484342169613c1fd189e5b109f56a15401483045022100f4da608dfd1428ddd20c6df951bc7da04067f933c648c4eb3e4ce0966f35f433022055ce495629d7db5312b381756057cdea5933396cdca4be4b658d1a22ba87c69f01695221030780186c0be5df0d2d62cf54cc2f3d2c09911e377aa95b5fe875fa352aed0a592103f3237edd2d87010e8fe9f43f34e8c63de6384283de909795d62af4ddb4d579542102ad03de5504ef947e4e6ee2fa6b15d150d553c21275f49f2ce2359d9fdedb9ade53ae00000000');
     }));
 
+  });
+
+  describe('Accelerate Transaction', function() {
+    let bitgo;
+    let wallet;
+    const outputIdx = 0;
+    const outputAddress = '2NCoSfHH6Ls4CdTS5QahgC9k7x9RfXeSwY4';
+    const changeAddress = outputAddress;
+    const txHex = '0100000001b6e8b36132d351b3d66b5452d8f4601e2271a7bb52b644397db956a4ffe2a053000000006a4730440220127c4adc1cf985cd884c383e69440ce4d48a0c4fdce6bf9d70faa0ee8092acb80220632cb6c99ded7f261814e602fc8fa8e7fe8cb6a95d45c497846b8624f7d19b3c012103df001c8b58ac42b6cbfc2223b8efaa7e9a1911e529bd2c8b7f90140079034e75ffffffff0200bd01050000000017a914c449a7fafb3b13b2952e064f2c3c58e851bb943087d0d61c00000000001976a914b0379374df5eab8be9a21ee96711712bdb781a9588ac00000000';
+    const txID = 'af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648';
+
+    before(function() {
+      nock('https://bitgo.fakeurl/api/v1')
+      .get(`/client/constants`)
+      .reply(200, { ttl: 3600, constants: {} });
+      bitgo = new TestBitGo({ env: 'mock' });
+      bitgo.initializeTestVars();
+      bitgo.setValidate(false);
+      wallet = new Wallet(bitgo, { id: outputAddress, private: { keychains: [userKeypair, backupKeypair, bitgoKey] } });
+      wallet.bitgo = bitgo;
+    });
+
+    it('arguments', co(function *() {
+      try {
+        yield wallet.accelerateTransaction({ feeRate: 123 });
+        throw new Error();
+      } catch (e) {
+        e.message.should.include('Missing parameter: transactionID');
+      }
+
+      try {
+        yield wallet.accelerateTransaction({ transactionID: 123, feeRate: 123 });
+        throw new Error();
+      } catch (e) {
+        e.message.should.include('Expecting parameter string: transactionID');
+      }
+
+      try {
+        yield wallet.accelerateTransaction({ transactionID: '123' });
+        throw new Error();
+      } catch (e) {
+        e.message.should.include('Missing parameter: feeRate');
+      }
+
+      const feesParams = ['123', 0, -10, 423.234, -Infinity, Infinity, NaN];
+
+      for (const feeRate of feesParams) {
+        try {
+          yield wallet.accelerateTransaction({ transactionID: '123', feeRate });
+          throw new Error(`feeRate value ${feeRate} should have thrown but did not!`);
+        } catch (e) {
+          e.message.should.include('Expecting parameter positive finite integer: feeRate');
+        }
+      }
+
+    }));
+
+    describe('bad input', function() {
+
+      it('non existant transaction ID', co(function *() {
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(`/${wallet.id()}/tx/${txID}`)
+        .reply(404, 'transaction not found on this wallet');
+        try {
+          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 123 });
+          throw new Error();
+        } catch (e) {
+          e.message.should.include('transaction not found on this wallet');
+        }
+      }));
+
+      it('confirmed transaction', co(function *() {
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(`/${wallet.id()}/tx/${txID}`)
+        .reply(200, {
+          confirmations: 6
+        });
+        try {
+          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 2000 });
+          throw new Error();
+        } catch (e) {
+          e.message.should.include(`can't accelerate already confirmed transaction`);
+        }
+      }));
+
+      it('no outputs back to own wallet', co(function *() {
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(`/${wallet.id()}/tx/${txID}`)
+        .reply(200, {
+          outputs: [
+            {
+              account: outputAddress,
+              value: 1890000,
+              vout: 0
+            }
+          ],
+          confirmations: 0
+        });
+
+        try {
+          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 2000 });
+          throw new Error();
+        } catch (e) {
+          e.message.should.include(`No outputs back to own wallet in parent transaction`);
+        }
+      }));
+
+      it('no self outputs with enough funds to cover child fee', co(function *() {
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(`/${wallet.id()}/tx/${txID}`)
+        .reply(200, {
+          outputs: [
+            {
+              account: outputAddress,
+              value: 10,
+              vout: outputIdx,
+              isMine: true
+            }
+          ],
+          confirmations: 0,
+          hex: txHex,
+          fee: 10
+        });
+
+        try {
+          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 20 });
+          throw new Error();
+        } catch (e) {
+          e.message.should.include(`No outputs back to own wallet in parent with enough funds to cover child fee`);
+        }
+      }));
+
+      it('cannot cover child fee with parent change output', co(function *() {
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(`/${wallet.id()}/tx/${txID}`)
+        .reply(200, {
+          outputs: [
+            {
+              account: outputAddress,
+              value: 50,
+              vout: outputIdx,
+              isMine: true
+            }
+          ],
+          confirmations: 0,
+          hex: txHex,
+          fee: 10
+        });
+
+        try {
+          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 20 });
+          throw new Error();
+        } catch (e) {
+          e.message.should.include(`No outputs back to own wallet in parent with enough funds to cover child fee`);
+        }
+      }));
+
+      it('cannot find correct unspent to use', co(function *() {
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(`/${wallet.id()}/tx/${txID}`)
+        .reply(200, {
+          outputs: [
+            {
+              account: outputAddress,
+              value: 50 * 1e4,
+              vout: outputIdx,
+              isMine: true
+            }
+          ],
+          confirmations: 0,
+          hex: txHex,
+          fee: 10
+        });
+
+        nock('https://bitgo.fakeurl/api/v1/address')
+        .get(`/${outputAddress}/unspents`)
+        .reply(200, {
+          unspents: [
+            {
+              tx_hash: txID,
+              tx_output_n: outputIdx + 1
+            }
+          ]
+        });
+
+        try {
+          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 20 });
+          throw new Error();
+        } catch (e) {
+          e.message.should.include(`Could not find unspent for output`);
+        }
+      }));
+    });
+
+    describe('successful tx acceleration', function() {
+      const feeRate = 20;
+
+      it('accelerates a stuck tx', co(function *() {
+        // set up nocks
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(`/${wallet.id()}/tx/${txID}`)
+        .reply(200, {
+          outputs: [
+            {
+              account: outputAddress,
+              value: 50 * 1e4,
+              vout: outputIdx,
+              isMine: true
+            }
+          ],
+          confirmations: 0,
+          hex: txHex,
+          fee: 10
+        });
+
+        nock('https://bitgo.fakeurl/api/v1/address')
+        .get(`/${outputAddress}/unspents`)
+        .reply(200, {
+          unspents: [
+            {
+              tx_hash: txID,
+              tx_output_n: outputIdx
+            }
+          ]
+        });
+
+        const changeChain = wallet.getChangeChain({});
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .post(`/${wallet.id()}/address/${changeChain}`)
+        .reply(200, {
+          address: changeAddress
+        });
+
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .post(`/tx/send`)
+        .reply(200, {
+          status: 'accepted'
+        });
+
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(/.*\/billing\/fee\?amount=.*/)
+        .reply(200, {
+          fee: 0
+        });
+
+        nock('https://bitgo.fakeurl/api/v1/tx/fee')
+        .get(`?version=12&maxFee=1000000`)
+        .reply(200, {
+          feePerKb: 0
+        });
+
+        nock('https://bitgo.fakeurl/api/v1/wallet')
+        .get(`${wallet.id()}?gpk=true`)
+        .reply(200, {
+          feePerKb: 0
+        });
+
+        const childTx = yield wallet.accelerateTransaction({ transactionID: txID, feeRate });
+
+        // verify childTx
+        should(childTx).exist();
+        childTx.should.have.property('status', 'accepted');
+      }));
+    });
   });
 
 });
