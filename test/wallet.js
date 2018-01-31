@@ -3518,8 +3518,9 @@ describe('Wallet Prototype Methods', function() {
     const outputIdx = 0;
     const outputAddress = '2NCoSfHH6Ls4CdTS5QahgC9k7x9RfXeSwY4';
     const changeAddress = outputAddress;
-    const txHex = '0100000001b6e8b36132d351b3d66b5452d8f4601e2271a7bb52b644397db956a4ffe2a053000000006a4730440220127c4adc1cf985cd884c383e69440ce4d48a0c4fdce6bf9d70faa0ee8092acb80220632cb6c99ded7f261814e602fc8fa8e7fe8cb6a95d45c497846b8624f7d19b3c012103df001c8b58ac42b6cbfc2223b8efaa7e9a1911e529bd2c8b7f90140079034e75ffffffff0200bd01050000000017a914c449a7fafb3b13b2952e064f2c3c58e851bb943087d0d61c00000000001976a914b0379374df5eab8be9a21ee96711712bdb781a9588ac00000000';
-    const txID = 'af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648';
+    const parentTxId = 'af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648';
+    const parentTxHex = '0100000001b6e8b36132d351b3d66b5452d8f4601e2271a7bb52b644397db956a4ffe2a053000000006a4730440220127c4adc1cf985cd884c383e69440ce4d48a0c4fdce6bf9d70faa0ee8092acb80220632cb6c99ded7f261814e602fc8fa8e7fe8cb6a95d45c497846b8624f7d19b3c012103df001c8b58ac42b6cbfc2223b8efaa7e9a1911e529bd2c8b7f90140079034e75ffffffff0200bd01050000000017a914c449a7fafb3b13b2952e064f2c3c58e851bb943087d0d61c00000000001976a914b0379374df5eab8be9a21ee96711712bdb781a9588ac00000000';
+    const childTxHex = '01000000014876f690f5f995275b9b049dc8e834e0a93c274b05b1ddf76da70d00867c86af0000000000ffffffff01427507000000000017a914d682476e9bd54454a885f9dff1e604e99cef43dc8700000000';
 
     before(function() {
       nock('https://bitgo.fakeurl/api/v1')
@@ -3571,10 +3572,10 @@ describe('Wallet Prototype Methods', function() {
 
       it('non existant transaction ID', co(function *() {
         nock('https://bitgo.fakeurl/api/v1/wallet')
-        .get(`/${wallet.id()}/tx/${txID}`)
+        .get(`/${wallet.id()}/tx/${parentTxId}`)
         .reply(404, 'transaction not found on this wallet');
         try {
-          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 123 });
+          yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 123 });
           throw new Error();
         } catch (e) {
           e.message.should.include('transaction not found on this wallet');
@@ -3583,12 +3584,12 @@ describe('Wallet Prototype Methods', function() {
 
       it('confirmed transaction', co(function *() {
         nock('https://bitgo.fakeurl/api/v1/wallet')
-        .get(`/${wallet.id()}/tx/${txID}`)
+        .get(`/${wallet.id()}/tx/${parentTxId}`)
         .reply(200, {
           confirmations: 6
         });
         try {
-          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 2000 });
+          yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 2000 });
           throw new Error();
         } catch (e) {
           e.message.should.include(`can't accelerate already confirmed transaction`);
@@ -3597,7 +3598,7 @@ describe('Wallet Prototype Methods', function() {
 
       it('no outputs back to own wallet', co(function *() {
         nock('https://bitgo.fakeurl/api/v1/wallet')
-        .get(`/${wallet.id()}/tx/${txID}`)
+        .get(`/${wallet.id()}/tx/${parentTxId}`)
         .reply(200, {
           outputs: [
             {
@@ -3610,7 +3611,7 @@ describe('Wallet Prototype Methods', function() {
         });
 
         try {
-          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 2000 });
+          yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 2000 });
           throw new Error();
         } catch (e) {
           e.message.should.include(`No outputs back to own wallet in parent transaction`);
@@ -3619,7 +3620,7 @@ describe('Wallet Prototype Methods', function() {
 
       it('no self outputs with enough funds to cover child fee', co(function *() {
         nock('https://bitgo.fakeurl/api/v1/wallet')
-        .get(`/${wallet.id()}/tx/${txID}`)
+        .get(`/${wallet.id()}/tx/${parentTxId}`)
         .reply(200, {
           outputs: [
             {
@@ -3630,12 +3631,12 @@ describe('Wallet Prototype Methods', function() {
             }
           ],
           confirmations: 0,
-          hex: txHex,
+          hex: parentTxHex,
           fee: 10
         });
 
         try {
-          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 20 });
+          yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 20 });
           throw new Error();
         } catch (e) {
           e.message.should.include(`No outputs back to own wallet in parent with enough funds to cover child fee`);
@@ -3644,7 +3645,7 @@ describe('Wallet Prototype Methods', function() {
 
       it('cannot cover child fee with parent change output', co(function *() {
         nock('https://bitgo.fakeurl/api/v1/wallet')
-        .get(`/${wallet.id()}/tx/${txID}`)
+        .get(`/${wallet.id()}/tx/${parentTxId}`)
         .reply(200, {
           outputs: [
             {
@@ -3655,12 +3656,12 @@ describe('Wallet Prototype Methods', function() {
             }
           ],
           confirmations: 0,
-          hex: txHex,
+          hex: parentTxHex,
           fee: 10
         });
 
         try {
-          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 20 });
+          yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 20 });
           throw new Error();
         } catch (e) {
           e.message.should.include(`No outputs back to own wallet in parent with enough funds to cover child fee`);
@@ -3669,7 +3670,7 @@ describe('Wallet Prototype Methods', function() {
 
       it('cannot find correct unspent to use', co(function *() {
         nock('https://bitgo.fakeurl/api/v1/wallet')
-        .get(`/${wallet.id()}/tx/${txID}`)
+        .get(`/${wallet.id()}/tx/${parentTxId}`)
         .reply(200, {
           outputs: [
             {
@@ -3680,7 +3681,7 @@ describe('Wallet Prototype Methods', function() {
             }
           ],
           confirmations: 0,
-          hex: txHex,
+          hex: parentTxId,
           fee: 10
         });
 
@@ -3689,14 +3690,14 @@ describe('Wallet Prototype Methods', function() {
         .reply(200, {
           unspents: [
             {
-              tx_hash: txID,
+              tx_hash: parentTxId,
               tx_output_n: outputIdx + 1
             }
           ]
         });
 
         try {
-          yield wallet.accelerateTransaction({ transactionID: txID, feeRate: 20 });
+          yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 20 });
           throw new Error();
         } catch (e) {
           e.message.should.include(`Could not find unspent for output`);
@@ -3710,7 +3711,7 @@ describe('Wallet Prototype Methods', function() {
       it('accelerates a stuck tx', co(function *() {
         // set up nocks
         nock('https://bitgo.fakeurl/api/v1/wallet')
-        .get(`/${wallet.id()}/tx/${txID}`)
+        .get(`/${wallet.id()}/tx/${parentTxId}`)
         .reply(200, {
           outputs: [
             {
@@ -3721,7 +3722,7 @@ describe('Wallet Prototype Methods', function() {
             }
           ],
           confirmations: 0,
-          hex: txHex,
+          hex: parentTxHex,
           fee: 10
         });
 
@@ -3730,15 +3731,14 @@ describe('Wallet Prototype Methods', function() {
         .reply(200, {
           unspents: [
             {
-              tx_hash: txID,
+              tx_hash: parentTxId,
               tx_output_n: outputIdx
             }
           ]
         });
 
-        const changeChain = wallet.getChangeChain({});
         nock('https://bitgo.fakeurl/api/v1/wallet')
-        .post(`/${wallet.id()}/address/${changeChain}`)
+        .post(`/${wallet.id()}/address/${wallet.getChangeChain({})}`)
         .reply(200, {
           address: changeAddress
         });
@@ -3756,7 +3756,7 @@ describe('Wallet Prototype Methods', function() {
         });
 
         nock('https://bitgo.fakeurl/api/v1/tx/fee')
-        .get(`?version=12&maxFee=1000000`)
+        .get(/\?.*$/)
         .reply(200, {
           feePerKb: 0
         });
@@ -3764,14 +3764,16 @@ describe('Wallet Prototype Methods', function() {
         nock('https://bitgo.fakeurl/api/v1')
         .post(`/tx/send`)
         .reply(200, {
-          status: 'accepted'
+          status: 'accepted',
+          transaction: childTxHex
         });
 
-        const childTx = yield wallet.accelerateTransaction({ transactionID: txID, feeRate });
+        const childTx = yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate });
 
         // verify childTx
         should(childTx).exist;
         childTx.should.have.property('status', 'accepted');
+        childTx.should.have.property('tx', childTxHex);
       }));
     });
   });
