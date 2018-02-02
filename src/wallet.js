@@ -18,6 +18,7 @@ const co = Promise.coroutine;
 const _ = require('lodash');
 
 const CHANGE_CHAIN_P2SH = 1;
+const CHAIN_SEGWIT = 10;
 const CHANGE_CHAIN_SEGWIT = 11;
 
 //
@@ -1198,24 +1199,68 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
   // possible params:
   // 1) Max inputs for child tx
   // 2) Min confirmations for additional unspents
-  const estimateChildFee = ({ nInputs, parentTx, feeRate }) => {
-    const isSegwit = this.getChangeChain({}) === CHANGE_CHAIN_SEGWIT;
-
-    const nChildP2SHInputs = isSegwit ? 0 : nInputs;
-    const nChildSegwitInputs = isSegwit ? nInputs : 0;
+  const estimateChildFee = ({ inputs, parentFee, parentVBytes, feeRate }) => {
+    const segwit = inputs.segwit || 0;
+    const P2SH = inputs.P2SH || 0;
+    const P2PKH = inputs.P2PKH || 0;
 
     const childFeeInfo = TransactionBuilder.calculateMinerFeeInfo({
-      nP2SHInputs: nChildP2SHInputs,
-      nP2PKHInputs: 0,
-      nP2SHP2WSHInputs: nChildSegwitInputs,
+      nP2SHInputs: P2SH,
+      nP2PKHInputs: P2PKH,
+      nP2SHP2WSHInputs: segwit,
       nOutputs: 1,
       feeRate: 1
     });
 
-    const parentSize = parentTx.hex.length / 2;
-    const combinedSize = parentSize + childFeeInfo.size;
+    const combinedSize = _.ceil(parentVBytes) + childFeeInfo.size;
     const combinedFee = _.toInteger(combinedSize * feeRate);
-    return combinedFee - parentTx.fee;
+    return combinedFee - parentFee;
+  };
+
+  const findAdditionalUnspent = ({ inputs, vout, parentFee, parentTx }) => {
+    return co(function *() {
+      // try to build the child tx with one additional segwit unspent
+      if (_.isNumber(inputs.segwit)) {
+        inputs.segwit++;
+      } else {
+        inputs.segwit = 1;
+      }
+
+      const parentOutputValue = parentTx.outs[vout].value;
+      const childFeeUsingSegwit = estimateChildFee({ inputs, parentFee, parentVBytes: parentTx.virtualSize(), feeRate: params.feeRate });
+      let uncoveredChildFee = childFeeUsingSegwit - parentOutputValue;
+      const segwitUnspents = yield this.unspents({ minConfirms: 1, minSize: uncoveredChildFee, limit: 1, segwit: true });
+      if (segwitUnspents.length === 0) {
+        // could not find a good segwit unspent
+        // try again without the segwit constraint for a p2sh unspent
+        inputs.segwit--;
+
+        // try to build the child tx with one additional p2sh unspent
+        if (_.isNumber(inputs.P2SH)) {
+          inputs.P2SH++;
+        } else {
+          inputs.P2SH = 1;
+        }
+        const childFeeUsingP2SH = estimateChildFee({ inputs, parentFee, parentVBytes: parentTx.virtualSize(), feeRate: params.feeRate });
+        uncoveredChildFee = childFeeUsingP2SH - parentOutputValue;
+        const p2shUnspents = yield this.unspents({ minConfirms: 1, minSize: uncoveredChildFee, limit: 1 });
+        if (p2shUnspents.length === 0) {
+          throw new Error(`No confirmed unspent available to cover the remaining child fee`);
+        }
+
+        if (_.isUndefined(p2shUnspents[0].value)) {
+          throw new Error(`Received additional unspent doesn't have a value`);
+        }
+        // found a good p2sh unspent to use
+        return p2shUnspents[0];
+      }
+
+      if (_.isUndefined(segwitUnspents[0].value)) {
+        throw new Error(`Received additional unspent doesn't have a value`);
+      }
+      // found a good segwit unspent to use
+      return segwitUnspents[0];
+    }).call(this);
   };
 
   return co(function *() {
@@ -1233,55 +1278,50 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
       throw new Error(`can't accelerate already confirmed transaction`);
     }
 
-    const selfOutputs = [];
-    for (const output of parentTx.outputs) {
-      if (output.isMine) {
-        selfOutputs.push(output);
-      }
+    // get the outputs from the parent tx which are to our wallet
+    const ourOutputs = _.filter(parentTx.outputs, (output) => output.isMine);
+
+    if (ourOutputs.length === 0) {
+      throw new Error(`No outputs to wallet in parent transaction`);
     }
 
-    if (selfOutputs.length === 0) {
-      throw new Error(`No outputs back to own wallet in parent transaction`);
-    }
+    // use the largest output in the parent tx which is back to our wallet
+    const outputToUse = _.maxBy(ourOutputs, (output) => output.value);
 
-    const outputToUse = _.maxBy(selfOutputs, function(output) {
-      return output.value;
-    });
-
-    // const address = outputToUse.account;
-    const output_number = outputToUse.vout;
+    // find the unspent corresponding to this particular output
+    // TODO: is there a better way to get this unspent?
     const unspentsResult = yield this.unspents({});
 
-    const parentUnspentToUse = _.find(unspentsResult, function (unspent) {
+    const parentUnspentToUse = _.find(unspentsResult, (unspent) => {
       // make sure unspent belongs to the given txid
       if (unspent.tx_hash !== params.transactionID) {
         return false;
       }
       // make sure unspent has correct v_out index
-      return unspent.tx_output_n === output_number;
+      return unspent.tx_output_n === outputToUse.vout;
     });
 
     if (_.isUndefined(parentUnspentToUse)) {
-
       // better error message would be: could not find unspent change output from parent tx to use as child input
       throw new Error(`Could not find unspent for output`);
     }
 
-    let childFee = estimateChildFee({ nInputs: 1, parentTx, feeRate: params.feeRate });
     const unspentsToUse = [parentUnspentToUse];
 
+    // determine whether the input coming from the parent is segwit or not
+    const decodedParent = bitcoin.Transaction.fromHex(parentTx.hex);
+    const isParentOutputSegwit = outputToUse in [CHAIN_SEGWIT, CHANGE_CHAIN_SEGWIT];
+
+    const childInputs = {
+      segwit: isParentOutputSegwit ? 1 : 0,
+      P2SH: isParentOutputSegwit ? 0 : 1
+    };
+
+    const childFee = estimateChildFee({ inputs: childInputs, parentFee: parentTx.fee, parentVBytes: decodedParent.virtualSize(), feeRate: params.feeRate });
+
     if (outputToUse.value < childFee) {
-      // try to build the child tx with one additional unspent
-      childFee = estimateChildFee({ nInputs: 2, parentTx, feeRate: params.feeRate });
-      const uncoveredChildFee = childFee - outputToUse.value;
-      const walletUnspents = yield this.unspents({ minConfirms: 1, minSize: uncoveredChildFee, limit: 1 });
-      if (walletUnspents.length === 0) {
-        throw new Error(`No confirmed unspent available to cover the remaining child fee`);
-      }
-      if (_.isUndefined(walletUnspents[0].value)) {
-        throw new Error(`Received additional unspent doesn't have a value`);
-      }
-      unspentsToUse.push(walletUnspents[0]);
+      const additional = yield findAdditionalUnspent({ inputs: childInputs, vout: outputToUse.vout, parentFee: parentTx.fee, parentTx: decodedParent });
+      unspentsToUse.push(additional);
     }
 
     // create new change address for child tx
@@ -1309,7 +1349,8 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
     });
 
     // put tx on the send queue for broadcast
-    return this.sendTransaction(tx);
+    const sendResult = yield this.sendTransaction(tx);
+    return sendResult;
   }).call(this).asCallback(callback);
 };
 
