@@ -1248,9 +1248,9 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
       return output.value;
     });
 
-    const address = outputToUse.account;
+    // const address = outputToUse.account;
     const output_number = outputToUse.vout;
-    const unspentsResult = yield this.bitgo.blockchain().getAddressUnspents({ address });
+    const unspentsResult = yield this.unspents({});
 
     const parentUnspentToUse = _.find(unspentsResult, function (unspent) {
       // make sure unspent belongs to the given txid
@@ -1270,7 +1270,7 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
     let childFee = estimateChildFee({ nInputs: 1, parentTx, feeRate: params.feeRate });
     const unspentsToUse = [parentUnspentToUse];
 
-    if (outputToUse.value < childFee ) {
+    if (outputToUse.value < childFee) {
       // try to build the child tx with one additional unspent
       childFee = estimateChildFee({ nInputs: 2, parentTx, feeRate: params.feeRate });
       const uncoveredChildFee = childFee - outputToUse.value;
@@ -1300,12 +1300,16 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
       ],
       fee: childFee,
       changeAddress: changeAddress.address,
-      walletPassphrase: params.walletPassphrase,
-      xprv: params.xprv
+      bitgoFee: {
+        amount: 0,
+        address: ''
+      },
+      xprv: params.xprv,
+      walletPassphrase: params.walletPassphrase
     });
 
     // put tx on the send queue for broadcast
-    return this.sendTransaction({ tx: tx.transactionHex });
+    return this.sendTransaction(tx);
   }).call(this).asCallback(callback);
 };
 
