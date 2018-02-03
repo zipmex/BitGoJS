@@ -16,6 +16,7 @@ const common = require('./common');
 const Promise = require('bluebird');
 const co = Promise.coroutine;
 const _ = require('lodash');
+const request = require('superagent');
 
 const CHANGE_CHAIN_P2SH = 1;
 const CHAIN_SEGWIT = 10;
@@ -1263,6 +1264,20 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
     }).call(this);
   };
 
+  const getParentTxHex = ({ parentTxId }) => {
+    return co(function *() {
+      const smartBitApiUrl = common.Environments[this.bitgo.getEnv()].smartBitApiBaseUrl + '/blockchain/tx/';
+      const txUrl = smartBitApiUrl + parentTxId + '/hex';
+      const result = yield request.get(txUrl);
+
+      if (!_.isBoolean(result.body.success) || !result.body.success) {
+        throw new Error('Did not successfully receive parent tx hex');
+      }
+
+      return result.body.hex[0].hex;
+    }).call(this);
+  };
+
   return co(function *() {
     params = params || {};
     common.validateParams(params, ['transactionID'], [], callback);
@@ -1309,8 +1324,9 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
     const unspentsToUse = [parentUnspentToUse];
 
     // determine whether the input coming from the parent is segwit or not
-    const decodedParent = bitcoin.Transaction.fromHex(parentTx.hex);
-    const isParentOutputSegwit = outputToUse in [CHAIN_SEGWIT, CHANGE_CHAIN_SEGWIT];
+    const parentTxHex = yield getParentTxHex({ parentTxId: params.transactionID });
+    const decodedParent = bitcoin.Transaction.fromHex(parentTxHex);
+    const isParentOutputSegwit = outputToUse.chain === CHAIN_SEGWIT || outputToUse.chain === CHANGE_CHAIN_SEGWIT;
 
     const childInputs = {
       segwit: isParentOutputSegwit ? 1 : 0,
