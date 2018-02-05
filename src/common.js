@@ -154,7 +154,7 @@ exports.Environments = {
     signingAddress: 'msignBdFXteehDEgB6DNm7npRt7AcEZJP3',
     serverXpub: 'xpub661MyMwAqRbcErFqVXGiUFv9YeoPbhN72UiNCUdj9nj3T6M8h7iKNmbCYpMVWVZP7LA2ma3HWcPngz1gRTm4FPdtm9mHfrNvU93MCoszsGL',
     blockrApiBaseUrl: 'https://tbtc.blockr.io/api/v1',
-    smartBitApiBaseUrl: 'https://testnet-api.smartbit.com.au/v1'
+    smartBitApiBaseUrl: 'https://smartbit.fakeurl/v1'
   },
   rmgLocal: {
     uri: 'http://rmglocalhost:3000',

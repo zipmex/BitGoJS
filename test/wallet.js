@@ -19,6 +19,8 @@ const bitcoin = BitGoJS.bitcoin;
 const Promise = require('bluebird');
 const co = Promise.coroutine;
 const nock = require('nock');
+const common = require('../src/common');
+const request = require('superagent');
 nock.enableNetConnect();
 
 Q.longStackTrace = true;
@@ -3515,12 +3517,15 @@ describe('Wallet Prototype Methods', function() {
   describe('Accelerate Transaction (server mocked)', function() {
     let bitgo;
     let wallet;
+    let bgUrl;
+    let smartBitUrl;
+
     const outputIdx = 0;
     const outputAddress = '2NCoSfHH6Ls4CdTS5QahgC9k7x9RfXeSwY4';
     const changeAddress = outputAddress;
     const parentTxId = 'af867c86000da76df7ddb1054b273ca9e034e8c89d049b5b2795f9f590f67648';
     const additionalTxId = '3246b59fcec99c81e5f59522327b632f5c54e4da42ccb512550ed91a3f9b5ce6';
-    const parentTxHex = '0100000001b6e8b36132d351b3d66b5452d8f4601e2271a7bb52b644397db956a4ffe2a053000000006a4730440220127c4adc1cf985cd884c383e69440ce4d48a0c4fdce6bf9d70faa0ee8092acb80220632cb6c99ded7f261814e602fc8fa8e7fe8cb6a95d45c497846b8624f7d19b3c012103df001c8b58ac42b6cbfc2223b8efaa7e9a1911e529bd2c8b7f90140079034e75ffffffff0200bd01050000000017a914c449a7fafb3b13b2952e064f2c3c58e851bb943087d0d61c00000000001976a914b0379374df5eab8be9a21ee96711712bdb781a9588ac00000000';
+    const parentTxHex = '01000000000102e1c30f2a424bd339eada830a78286a5606c99d7f8e2e8be1955858d84d375f75000000002322002046d27566b5fa5bc2375cb43c86bfb46c9856c0a0b1bf99f8ec8f89fa6b13ca89ffffffff7c2d3cc1c05db074350595d47f719b5cef0a0fb549ba95b9b9f9cb1056d01cbf0000000023220020a05257bbe2d6db470ea8c367d7b948dff19e99d8d775ab09ee4973db478c8fddffffffff01404397000000000017a91488990f2994b2f11965e9542e0d01da61d9c019cf870400473044022046b0244399c0a56c8a0fdff3f150c520d24961a3de040e61f5b1ba90885710060220557e02802fac7086366cc4a477909372d4057188aaae8496f58d71e66d56869e014730440220161a729f4f9c59aa5ec86007701c8f0ea0c679da46c971c46739abd6ec0c20ef02205b849490fe98811617eeb06d99c7f9ad8b6c69b0c325f2f1e7a43212ab38b63601695221025b864106f997d8a6b2cb38ae96f8e16c64bc62ad2cc1b168fd34f3ba194538ee2102670baf6f5297999203c08c0e0ec24d7367f6b3d4cf7d593dda4a767d1e2c9ddd210371d5623a5e5ee232842631889adf2b7a6cf9a04ea8ad2488726b3f056ddd202053ae0400483045022100838fb910810bccaca63901b4ebec208442553b51df9a87ba0ffde2323730c09502201e567a3741ef3ed8eb4f3f69ef675f5623b631e464e0af9ca3eaf395eb7c52bf01483045022100bcb17e5cda35b70015184c2e795a05ff37b40bf573a1fb855b25117e32a85b1502204296cfbea889847f9fbfd062397a2c6b04f6aa1874326539905ae5c6d49080600169522102befcec96c8f9c785886b90d0b32d1f0b3f400c984221e575a24b69500ee77a5921037b35acc45dffa07bf2b39028797da52c69aefb56f92d2b2fcaaf9ba51c84bae921023fdfd3e337cf97fbe7872a9c6f9d992ca25369c4b0a978dd266d4727e0a2196c53ae00000000';
     const childTxHex = '01000000014876f690f5f995275b9b049dc8e834e0a93c274b05b1ddf76da70d00867c86af0000000000ffffffff01427507000000000017a914d682476e9bd54454a885f9dff1e604e99cef43dc8700000000';
     const unspentRedeemScript = '542102cd3c8e6006a4627705021d1d016d097c2944d98100a47bf2da67a5fe15aeeb342102ee1fa9e812e779356aa3c31ebf317d0cffebab92864cfe38bab223e0820f98bc21026ba05752baa6eafd5c5659da62b7f0ac51fd2886b65c241d0afef1c4fdfa1cbc21038c80e64d61f7e9a6d36a9dbb86e40288e9aac60f1a33bb47bff9c3a1336a510121032c64677912d511571907444c82fd1abd4807ebef327e2f7bfe41f1951ca8190d55ae';
     const walletId = '2NCoSfHH6Ls4CdTS5QahgC9k7x9RfXeSwY4';
@@ -3534,6 +3539,8 @@ describe('Wallet Prototype Methods', function() {
       bitgo.setValidate(false);
       wallet = new Wallet(bitgo, { id: walletId, private: { keychains: [userKeypair, backupKeypair, bitgoKey] } });
       wallet.bitgo = bitgo;
+      bgUrl = common.Environments[bitgo.getEnv()].uri;
+      smartBitUrl = common.Environments[bitgo.getEnv()].smartBitApiBaseUrl;
     });
 
     it('arguments', co(function *() {
@@ -3617,37 +3624,34 @@ describe('Wallet Prototype Methods', function() {
           yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 2000 });
           throw new Error();
         } catch (e) {
-          e.message.should.include(`No outputs back to own wallet in parent transaction`);
+          e.message.should.include(`No outputs to wallet in parent transaction`);
         }
       }));
 
       it('cannot find correct unspent to use', co(function *() {
         nock('https://bitgo.fakeurl')
-          .get(`/api/v1/wallet/${wallet.id()}/tx/${parentTxId}`)
-          .reply(200, {
-            outputs: [
-              {
-                account: outputAddress,
-                value: 50 * 1e4,
-                vout: outputIdx,
-                isMine: true
-              }
-            ],
-            confirmations: 0,
-            hex: parentTxId,
-            fee: 10
-          });
+        .get(`/api/v1/wallet/${wallet.id()}/tx/${parentTxId}`)
+        .reply(200, {
+          outputs: [
+            {
+              account: outputAddress,
+              value: 50 * 1e4,
+              vout: outputIdx,
+              isMine: true
+            }
+          ],
+          confirmations: 0,
+          hex: parentTxId,
+          fee: 10
+        });
 
         nock('https://bitgo.fakeurl')
-          .get(`/api/v1/address/${outputAddress}/unspents`)
-          .reply(200, {
-            unspents: [
-              {
-                tx_hash: parentTxId,
-                tx_output_n: outputIdx + 1
-              }
-            ]
-          });
+        .get(`/api/v1/wallet/${wallet.id()}/unspents`)
+        .query(true)
+        .reply(200, {
+          count: 0,
+          unspents: []
+        });
 
         try {
           yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 20 });
@@ -3676,12 +3680,25 @@ describe('Wallet Prototype Methods', function() {
         });
 
         nock('https://bitgo.fakeurl')
-        .get(`/api/v1/address/${outputAddress}/unspents`)
+        .get(`/api/v1/wallet/${wallet.id()}/unspents`)
+        .query(true)
         .reply(200, {
+          count: 1,
           unspents: [
             {
               tx_hash: parentTxId,
               tx_output_n: outputIdx
+            }
+          ]
+        });
+
+        nock(smartBitUrl)
+        .get(`/blockchain/tx/${parentTxId}/hex`)
+        .reply(200, {
+          success: true,
+          hex: [
+            {
+              hex: parentTxHex
             }
           ]
         });
@@ -3693,6 +3710,35 @@ describe('Wallet Prototype Methods', function() {
           count: 0,
           unspents: []
         });
+
+        nock('https://bitgo.fakeurl')
+        .get(`/api/v1/wallet/${wallet.id()}/unspents`)
+        .query(true)
+        .reply(200, {
+          count: 0,
+          unspents: []
+        });
+
+        /*
+        nock('https://bitgo.fakeurl')
+        .post(`/api/v1/wallet/${wallet.id()}/address/1`)
+        .reply(200, {
+          address: '2NFbvo2HK4eXZm1aqDcSDGGqD64FPt7T6d8'
+        });
+
+        nock('https://bitgo.fakeurl')
+        .post(`/api/v1/billing/address`)
+        .reply(200, {
+          address: '2NFbvo2HK4eXZm1aqDcSDGGqD64FPt7T6d8'
+        });
+
+        nock('https://bitgo.fakeurl')
+        .get(`/api/v1/tx/fee`)
+        .query(true)
+        .reply(200, {
+          feePerKb: 0
+        });
+        */
 
         try {
           yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 20 });
@@ -3850,8 +3896,31 @@ describe('Wallet Prototype Methods', function() {
       yield bitgo.unlock({ otp: bitgo.testUserOTP() });
     }));
 
+    const verifyTargetFeeRate = function({ parentTx, childTx, targetRate }, callback) {
+      return co(function *() {
+        const SMARTBIT_API = common.Environments[bitgo.getEnv()].smartBitApiBaseUrl;
+        const req_url = SMARTBIT_API + '/blockchain/tx/';
+        const parent_req_url = req_url + parentTx.hash;
+        const child_req_url = req_url + childTx.hash;
+
+        const parent = yield request.get(parent_req_url).send();
+        const child = yield request.get(child_req_url).send();
+
+        const childFee = child.body.transaction.fee_int;
+        const childSize = child.body.transaction.vsize;
+        const parentFee = parent.body.transaction.fee_int;
+        const parentSize = parent.body.transaction.vsize;
+
+        const combinedSize = childSize + parentSize;
+        const combinedFee = childFee + parentFee;
+        const combinedRate = combinedFee / combinedSize;
+
+        combinedRate.should.approximately(targetRate, 1);
+      }).call(this).asCallback(callback);
+    };
+
     describe('successful tx acceleration', function() {
-      const feeRate = 20;
+      const feeRate = 40;
 
       beforeEach(co(function *() {
         parentTx = yield wallet.createAndSignTransaction({
@@ -3867,7 +3936,9 @@ describe('Wallet Prototype Methods', function() {
 
         const sendResult = yield wallet.sendTransaction(parentTx);
         parentTx = _.merge(parentTx, _.pick(sendResult, ['hash']));
-        return Promise.delay(3000);
+
+        // allow parent tx time to be indexed by smartbit
+        return Promise.delay(10000);
       }));
 
       it('accelerates a stuck tx without additional unspents', co(function *() {
@@ -3877,6 +3948,10 @@ describe('Wallet Prototype Methods', function() {
         // verify childTx
         should(childTx).exist;
         childTx.should.have.property('status', 'accepted');
+
+        // allow child tx time to be indexed by smartbit
+        yield Promise.delay(10000);
+        yield verifyTargetFeeRate({ parentTx, childTx, targetRate: feeRate });
       }));
 
       xit('accelerates a stuck tx with one additional unspent', co(function *() {
@@ -3885,6 +3960,7 @@ describe('Wallet Prototype Methods', function() {
         // verify childTx
         should(childTx).exist;
         childTx.should.have.property('status', 'accepted');
+        return verifyTargetFeeRate({ parentTx, childTx, targetRate: feeRate });
       }));
     });
   });

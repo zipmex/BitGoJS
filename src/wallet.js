@@ -1215,7 +1215,8 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
 
     const combinedSize = _.ceil(parentVBytes) + childFeeInfo.size;
     const combinedFee = _.toInteger(combinedSize * feeRate);
-    return combinedFee - parentFee;
+    const childFee = combinedFee - parentFee;
+    return childFee;
   };
 
   const findAdditionalUnspent = ({ inputs, vout, parentFee, parentTx }) => {
@@ -1244,7 +1245,7 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
         }
         const childFeeUsingP2SH = estimateChildFee({ inputs, parentFee, parentVBytes: parentTx.virtualSize(), feeRate: params.feeRate });
         uncoveredChildFee = childFeeUsingP2SH - parentOutputValue;
-        const p2shUnspents = yield this.unspents({ minConfirms: 1, minSize: uncoveredChildFee, limit: 1 });
+        const p2shUnspents = yield this.unspents({ minConfirms: 1, minSize: uncoveredChildFee, limit: 1, segwit: false });
         if (p2shUnspents.length === 0) {
           throw new Error(`No confirmed unspent available to cover the remaining child fee`);
         }
@@ -1253,14 +1254,20 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
           throw new Error(`Received additional unspent doesn't have a value`);
         }
         // found a good p2sh unspent to use
-        return p2shUnspents[0];
+        return {
+          additional: p2shUnspents[0],
+          newChildFee: childFeeUsingP2SH
+        };
       }
 
       if (_.isUndefined(segwitUnspents[0].value)) {
         throw new Error(`Received additional unspent doesn't have a value`);
       }
       // found a good segwit unspent to use
-      return segwitUnspents[0];
+      return {
+        additional: segwitUnspents[0],
+        newChildFee: childFeeUsingSegwit
+      };
     }).call(this);
   };
 
@@ -1333,10 +1340,12 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
       P2SH: isParentOutputSegwit ? 0 : 1
     };
 
-    const childFee = estimateChildFee({ inputs: childInputs, parentFee: parentTx.fee, parentVBytes: decodedParent.virtualSize(), feeRate: params.feeRate });
+    let childFee = estimateChildFee({ inputs: childInputs, parentFee: parentTx.fee, parentVBytes: decodedParent.virtualSize(), feeRate: params.feeRate });
 
     if (outputToUse.value < childFee) {
-      const additional = yield findAdditionalUnspent({ inputs: childInputs, vout: outputToUse.vout, parentFee: parentTx.fee, parentTx: decodedParent });
+      const { additional, newChildFee } = yield findAdditionalUnspent({ inputs: childInputs, vout: outputToUse.vout, parentFee: parentTx.fee, parentTx: decodedParent });
+      childFee = newChildFee;
+
       unspentsToUse.push(additional);
     }
 
