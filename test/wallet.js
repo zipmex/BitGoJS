@@ -3962,6 +3962,7 @@ describe('Wallet Prototype Methods', function() {
   describe('Accelerate Transaction (test server)', function() {
     let wallet;
     let parentTx;
+    const minWalletBalance = 100000;
 
     before(co(function *() {
       wallet = fakeWallet;
@@ -3969,6 +3970,13 @@ describe('Wallet Prototype Methods', function() {
       // create stuck parent tx
       yield bitgo.authenticateTestUser(bitgo.testUserOTP());
       yield bitgo.unlock({ otp: bitgo.testUserOTP() });
+      yield wallet.get();
+      const walletBalance = wallet.balance();
+      if (walletBalance < minWalletBalance) {
+        // ask to fund wallet if there are less than 100k satoshi
+        const walletAddress = yield wallet.createAddress();
+        throw new Error(`Test Wallet doesn't have enough funds. Please fund the following address: ${walletAddress}`);
+      }
     }));
 
     const verifyTargetFeeRate = function({ parentTx, childTx, targetRate }, callback) {
