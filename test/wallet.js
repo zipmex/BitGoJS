@@ -3652,7 +3652,7 @@ describe('Wallet Prototype Methods', function() {
           yield wallet.accelerateTransaction({ transactionID: parentTxId, feeRate: 20 });
           throw new Error();
         } catch (e) {
-          e.message.should.include(`Could not find unspent for output`);
+          e.message.should.include(`Could not find unspent change output from parent tx to use as child input`);
         }
       }));
 
@@ -3770,14 +3770,14 @@ describe('Wallet Prototype Methods', function() {
             {
               vout: 0,
               value: 10348500,
-              isMine: true,
+              isMine: true
             },
             {
               vout: 1,
               value: 10000,
-              isMine: true,
+              isMine: true
             }
-          ],
+          ]
         });
 
         nock(bgUrl)
@@ -3823,15 +3823,15 @@ describe('Wallet Prototype Methods', function() {
             {
               vout: 0,
               value: 10000,
-              isMine: true,
+              isMine: true
             },
             {
               vout: 1,
               value: 8664,
-              isMine: true,
+              isMine: true
             }
           ],
-          confirmations: 0,
+          confirmations: 0
         });
 
         nock(bgUrl)
@@ -3892,15 +3892,15 @@ describe('Wallet Prototype Methods', function() {
             {
               vout: 0,
               value: 10000,
-              isMine: true,
+              isMine: true
             },
             {
               vout: 1,
               value: 8664,
-              isMine: true,
+              isMine: true
             }
           ],
-          confirmations: 0,
+          confirmations: 0
         });
 
         nock(bgUrl)
@@ -3935,7 +3935,7 @@ describe('Wallet Prototype Methods', function() {
               tx_output_n: 1,
               value: 20000,
               redeemScript: '522102cd3c8e6006a4627705021d1d016d097c2944d98100a47bf2da67a5fe15aeeb342102ee1fa9e812e779356aa3c31ebf317d0cffebab92864cfe38bab223e0820f98bc21026ba05752baa6eafd5c5659da62b7f0ac51fd2886b65c241d0afef1c4fdfa1cbc53ae',
-              chainPath: '/0/0',
+              chainPath: '/0/0'
             }
           ]
         });
