@@ -6,6 +6,8 @@ const PendingApproval = require('./pendingApproval');
 const Promise = require('bluebird');
 const co = Promise.coroutine;
 const _ = require('lodash');
+const PaymentProtocol = require('bitcore-payment-protocol');
+const superagent = require('superagent');
 
 const Wallet = function(bitgo, baseCoin, walletData) {
   this.bitgo = bitgo;
@@ -914,6 +916,107 @@ Wallet.prototype.sendMany = function(params, callback) {
 
   }).call(this).asCallback(callback);
 };
+
+/**
+ * Fetch info from merchant server is uri is valid
+ * @param {Object} params The params passed into the function
+ * @param {String} params.url The Url to retrieve info from
+ * @param callback
+ * @returns {Object} The info returned from the merchant server
+ */
+Wallet.prototype.getBip72Info = function(params, callback) {
+  return co(function *() {
+    if (!(this.baseCoin.type === 'btc') && !(this.baseCoin.type === 'tbtc')) {
+      throw new Error('Bip 72 only supports BTC');
+    }
+
+    params = params || {};
+    common.validateParams(params, ['url'], [], callback);
+    const url = params.url;
+    if (this.baseCoin.isBip72Uri(url)) {
+      const info = yield this.baseCoin.fetchBip72Info(url);
+      // try to build the transaction now in order to throw errors
+      // like insufficient funds before going to the confirmation screen
+      yield this.prebuildTransaction(info);
+      return info;
+    }
+    return {};
+
+  }).call(this).asCallback(callback);
+};
+
+/**
+ * Fetch info from merchant server is uri is valid
+ * @param {Object} params The params passed into the function
+ * @param {Array} params.transactions An array of transactions sent to the blockchain
+ * @param {Array} params.merchant_data Arbitrary data that may be used by the merchant to identify the PaymentRequest
+ * @param {String} params.payment_url The url to send the payment object to
+ * @param {String} params.memo The memo from the merchant server
+ * @param callback
+ * @returns {Object} The info returned from the merchant server Payment Ack
+ */
+Wallet.prototype.sendBip72PaymentResponse = co(function *(params, callback) {
+  return co(function *() {
+    if (!params.payment_url) {
+      throw new Error('cannot send a payment object without a payment_url');
+    }
+
+    const refundAddress = yield this.createAddress();
+    const script = refundAddress.coinSpecific.redeemScript;
+
+    // send the payment transaction
+    const payment = new PaymentProtocol().makePayment();
+    payment.set('merchant_data', params.merchant_data);
+    payment.set('transactions', params.transactions); // as from payment details
+
+    // define the refund outputs
+    const refund_outputs = [];
+    const outputs = new PaymentProtocol().makeOutput();
+    outputs.set('amount', 0);
+    outputs.set('script', new Buffer(script, 'hex'));
+    refund_outputs.push(outputs.message);
+
+    payment.set('refund_to', refund_outputs);
+    payment.set('memo', params.memo);
+
+    // serialize and send
+    const rawbody = payment.serialize();
+
+    let rawResponse;
+    try {
+      rawResponse = yield superagent
+      .post(params.payment_url)
+      .send(rawbody)
+      .set('Content-Transfer-Encoding', 'binary')
+      .set('Content-Type', PaymentProtocol.PAYMENT_CONTENT_TYPE)
+      .set('Accept', PaymentProtocol.PAYMENT_ACK_CONTENT_TYPE)
+      .buffer(true)
+      .parse(superagent.parse.image)
+      .then(res => res.body);
+    } catch (err) {
+      throw new Error('there was a problem retrieving the payment ack from the merchant');
+    }
+
+    if (rawResponse.length > PaymentProtocol.PAYMENT_ACK_MAX_SIZE) {
+      throw new Error('Cannot process a request larger than 60,000 bytes');
+    }
+
+    const body = PaymentProtocol.PaymentACK.decode(rawResponse);
+    const ack = new PaymentProtocol().makePaymentACK(body);
+    const serializedPayment = ack.get('payment');
+    const memo = ack.get('memo');
+    const decodedPayment = PaymentProtocol.Payment.decode(serializedPayment);
+    const paymentInfo = new PaymentProtocol().makePayment(decodedPayment);
+
+    return {
+      memo: memo,
+      paymentInfo: paymentInfo,
+      txs: params.transactions
+    };
+
+  }).call(this).asCallback(callback);
+});
+
 
 /**
  * Create a policy rule

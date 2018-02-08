@@ -6,6 +6,10 @@ const Promise = require('bluebird');
 const co = Promise.coroutine;
 const prova = require('prova-lib');
 const _ = require('lodash');
+const moment = require('moment');
+const PaymentProtocol = require('bitcore-payment-protocol');
+const superagent = require('superagent');
+const URL = require('url');
 
 const Btc = function() {
   // this function is called externally from BaseCoin
@@ -544,6 +548,139 @@ Btc.prototype.explainTransaction = function(params) {
   }
   return explanation;
 };
+
+/**
+ * Check if a uri is valid
+ * @param {String} uri The uri to check
+ * @return {Boolean}
+ */
+Btc.prototype.isBip72Uri = function (uri) {
+  const parsedUri = URL.parse(uri, true, true);
+  if (parsedUri.protocol !== 'bitcoin:' || _.isUndefined(parsedUri.query.r)) {
+    return false;
+  }
+
+  return true;
+};
+
+/**
+ * Check if a uri is valid
+ * @param {String} uri The uri to call
+ * @param callback
+ * @returns {Object} The info returned from the merchant server
+ */
+Btc.prototype.fetchBip72Info = co(function *(uri, callback) {
+  return co(function *() {
+    const VALID_PKI_TYPES = ['none', 'x509+sha256', 'x509+sha1'];
+
+    const parsedUri = URL.parse(uri, true, true);
+    const url = parsedUri.query.r;
+
+    const rawBody = yield superagent
+    .get(url)
+    .set('Content-Type', PaymentProtocol.PAYMENT_CONTENT_TYPE)
+    .set('Accept', PaymentProtocol.PAYMENT_REQUEST_CONTENT_TYPE)
+    .set('Content-Transfer-Encoding', 'binary')
+    .buffer(true)
+    .parse(superagent.parse.image)
+    .then(res => res.body);
+
+    if (rawBody.length > PaymentProtocol.PAYMENT_REQUEST_MAX_SIZE) {
+      throw new Error('Cannot process a request larger than 50,000 bytes');
+    }
+
+    const body = PaymentProtocol.PaymentRequest.decode(rawBody);
+    const request = new PaymentProtocol().makePaymentRequest(body);
+
+    const version = request.get('payment_details_version');
+    const pki_type = request.get('pki_type');
+    if (!VALID_PKI_TYPES.includes(pki_type)) {
+      throw new Error('Invalid pki_type received from ' + url);
+    }
+
+    // Verify the signature
+    const verified = request.verify();
+    if (!verified) {
+      throw new Error('Unable to verify merchant signature');
+    }
+
+    const serializedDetails = request.get('serialized_payment_details');
+    const decodedDetails = PaymentProtocol.PaymentDetails.decode(serializedDetails);
+    const details = new PaymentProtocol().makePaymentDetails(decodedDetails);
+
+    const network = details.get('network');
+    const chain = this.getChain();
+    if ((chain === 'btc' && network !== 'main') || (chain === 'tbtc' && network !== 'test')) {
+      throw new Error('Invalid network');
+    }
+
+    const outputs = details.get('outputs');
+    const time = details.get('time');
+    const expires = details.get('expires');
+    const memo = details.get('memo'); // should be displayed to the user
+    const payment_url = details.get('payment_url');
+    const merchant_data = details.get('merchant_data');
+
+    const now = moment().utc().unix();
+
+    if (now > expires) {
+      throw new Error('Payment request has expired');
+    }
+
+    const recipients = [];
+    let sum = 0;
+    for (const output of outputs) {
+      sum += output.amount.low;
+    }
+
+    // if any output amounts were specified, filter out 0 amount outputs
+    if (sum !== 0) {
+      sum = 0;
+      for (const output of outputs) {
+        const amount = output.amount.low;
+        if (amount === 0) {
+          continue;
+        }
+        sum += amount;
+        const outputScript = output.script.toString('hex');
+        const buff = new Buffer(outputScript, 'hex');
+        const address = bitcoin.address.fromOutputScript(buff, this.network);
+        recipients.push({
+          address: address,
+          amount: amount
+        });
+      }
+
+    }
+
+    if (sum === 0) {
+      // ask the user how much to pay, pay to only the first output
+      const output = outputs[0];
+      const outputScript = output.script.toString('hex');
+      const buff = new Buffer(outputScript, 'hex');
+      const address = bitcoin.address.fromOutputScript(buff, this.network);
+      recipients.push({
+        address: address,
+        amount: 0 // will need to be decided and changed by the user
+      });
+    }
+
+    return {
+      network: network,
+      time: time,
+      expires: expires,
+      memo: memo,
+      payment_url: payment_url,
+      version: version,
+      pki_type: pki_type,
+      merchant_data: merchant_data,
+      recipients: recipients,
+      sum: sum
+    };
+
+
+  }).call(this).asCallback(callback);
+});
 
 Btc.prototype.getRecoveryBlockchainApiBaseUrl = function() {
   return common.Environments[this.bitgo.env].blockrApiBaseUrl;

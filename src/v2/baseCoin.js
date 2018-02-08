@@ -158,6 +158,15 @@ BaseCoin.prototype.supportsBlockTarget = function() {
 };
 
 /**
+ * Check if a uri is valid
+ * @param uri The uri to check
+ * @return {Boolean}
+ */
+BaseCoin.prototype.isBip72Uri = function (uri) {
+  return false;
+};
+
+/**
  * If a coin needs to add additional parameters to the wallet generation, it does it in this method
  * @param walletParams
  * @return {*}
