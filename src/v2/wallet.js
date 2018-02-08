@@ -950,12 +950,13 @@ Wallet.prototype.getBip72Info = function(params, callback) {
  * @param {Object} params The params passed into the function
  * @param {Array} params.transactions An array of transactions sent to the blockchain
  * @param {Array} params.merchant_data Arbitrary data that may be used by the merchant to identify the PaymentRequest
+ * @param {Integer} params.sum The amount to be refunded in case something in the future goes wrong (merchandise damage in shipping, etc.)
  * @param {String} params.payment_url The url to send the payment object to
  * @param {String} params.memo The memo from the merchant server
  * @param callback
  * @returns {Object} The info returned from the merchant server Payment Ack
  */
-Wallet.prototype.sendBip72PaymentResponse = co(function *(params, callback) {
+Wallet.prototype.sendBip72PaymentResponse = co(function *sendBip72PaymentResponse(params, callback) {
   return co(function *() {
     if (!params.payment_url) {
       throw new Error('cannot send a payment object without a payment_url');
@@ -972,7 +973,7 @@ Wallet.prototype.sendBip72PaymentResponse = co(function *(params, callback) {
     // define the refund outputs
     const refund_outputs = [];
     const outputs = new PaymentProtocol().makeOutput();
-    outputs.set('amount', 0);
+    outputs.set('amount', params.sum);
     outputs.set('script', new Buffer(script, 'hex'));
     refund_outputs.push(outputs.message);
 
@@ -998,7 +999,7 @@ Wallet.prototype.sendBip72PaymentResponse = co(function *(params, callback) {
     }
 
     if (rawResponse.length > PaymentProtocol.PAYMENT_ACK_MAX_SIZE) {
-      throw new Error('Cannot process a request larger than 60,000 bytes');
+      throw new Error('Cannot process a payment ack larger than 60,000 bytes');
     }
 
     const body = PaymentProtocol.PaymentACK.decode(rawResponse);
