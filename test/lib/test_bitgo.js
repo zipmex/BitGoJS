@@ -28,6 +28,13 @@ BitGo.TEST_SHARED_KEY_PASSWORD = BitGo.TEST_PASSWORD;
 BitGo.TEST_THIRD_USER = 'third_user_test@bitgo.com';
 BitGo.TEST_THIRD_PASSWORD = BitGo.TEST_PASSWORD;
 
+// account with a known total balance. Don't spend or receive coins
+// from any wallet in this account. Known total balance across
+// all TLTC wallets in this account is exactly 9999586400
+BitGo.TEST_KNOWN_BALANCE_USER = 'tyler+test-get-total-balances@bitgo.com';
+BitGo.TEST_KNOWN_BALANCE_PASSWORD = BitGo.TEST_PASSWORD;
+BitGo.TEST_KNOWN_BALANCE = 9999586400;
+
 BitGo.TEST_CLIENTID = 'test';
 BitGo.TEST_CLIENTSECRET = 'testclientsecret';
 
@@ -42,6 +49,9 @@ BitGo.TRAVEL_RULE_TXID = '33447753455651508cfd099c9ebe0db6a2243ccba4766319621fbc
 BitGo.TEST_WALLET_REGROUP_PASSCODE = 'test security fanout & coalesce';
 
 BitGo.prototype.initializeTestVars = function() {
+  this._promise.config({
+    longStackTraces: true
+  });
   if (this.getEnv() === 'dev' || this.getEnv() === 'local') {
     BitGo.TEST_USERID = '54d3e3a4b08fa6dc0a0002c07f8a9f86';
     BitGo.TEST_SHARED_KEY_USERID = '54d418de4ea11d050b0006186d08ea5c';
@@ -159,6 +169,10 @@ BitGo.prototype.initializeTestVars = function() {
     BitGo.V2.TEST_ETH_WALLET_ID = '598f606cd8fc24710d2ebadb1d9459bb';
     BitGo.V2.TEST_ETH_WALLET_PASSPHRASE = 'moon';
     BitGo.V2.TEST_ETH_WALLET_FIRST_ADDRESS = '0xdf07117705a9f8dc4c2a78de66b7f1797dba9d4e';
+
+    BitGo.V2.TEST_KEYCHAIN_CHANGE_PW_USER = 'leo+test_keychain_update_pw@bitgo.com';
+    BitGo.V2.TEST_KEYCHAIN_CHANGE_PW_PASSWORD = BitGo.TEST_PASSWORD;
+
   }
 
   BitGo.TEST_FEE_SINGLE_KEY_WIF = 'cRVQ6cbUyGHVvByPKF9GnEhaB4HUBFgLQ2jVX1kbQARHaTaD7WJ2';
@@ -201,6 +215,26 @@ BitGo.prototype.authenticateSharingTestUser = function(otp, callback) {
     response.should.have.property('user');
   })
   .nodeify(callback);
+};
+
+BitGo.prototype.authenticateKnownBalanceTestUser = function (otp, callback) {
+  return co(function *() {
+    const response = yield this.authenticate({ username: BitGo.TEST_KNOWN_BALANCE_USER, password: BitGo.TEST_KNOWN_BALANCE_PASSWORD, otp: otp });
+    response.should.have.property('access_token');
+    response.should.have.property('user');
+  }).call(this).asCallback(callback);
+};
+
+BitGo.prototype.authenticateKeychainUpdatePWTest = function(otp, callback) {
+  return co(function *() {
+    const response = yield this.authenticate({
+      username: BitGo.V2.TEST_KEYCHAIN_CHANGE_PW_USER,
+      password: BitGo.V2.TEST_KEYCHAIN_CHANGE_PW_PASSWORD,
+      otp: otp
+    });
+    response.should.have.property('access_token');
+    response.should.have.property('user');
+  }).call(this).asCallback(callback);
 };
 
 const fetchConstants = BitGo.prototype.fetchConstants;
