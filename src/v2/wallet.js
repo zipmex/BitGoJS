@@ -338,6 +338,55 @@ Wallet.prototype.fanoutUnspents = function fanoutUnspents(params, callback) {
 };
 
 /**
+ * Sweep funds for a wallet
+ *
+ * @param params {Object} parameters object
+ * @param params.walletPassphrase {String} the users wallet passphrase
+ * @param [params.xprv] {String} the private key in string form if the walletPassphrase is not available
+ * @param [params.feeTxConfirmTarget] {number} The number of blocks to wait to confirm the transaction
+ * @param [params.feeRate] {number} The desired fee rate for the transaction in satoshis/kb
+ * @param params.address {String} The address to send all the funds in the wallet to
+ * @param [params.otp] {String} Two factor auth code to enable sending the transaction
+ * @param [callback]
+ * @returns txHex {String} the txHex of the incomplete transaction that needs to be signed by the user in the SDK
+ */
+Wallet.prototype.sweep = function sweep(params, callback) {
+  return co(function *() {
+    params = params || {};
+    common.validateParams(params, ['address'], ['walletPassphrase', 'xprv', 'otp'], callback);
+
+    if (this.baseCoin.getFamily() === 'eth') {
+      if (this.confirmedBalanceString() !== this.balanceString()) {
+        throw new Error('Cannot sweep if confirmedBalanceString and balanceString are different');
+      }
+      params.recipients = [{
+        address: params.address,
+        amount: this.spendableBalanceString()
+      }];
+
+      return this.sendMany(params);
+    }
+    // the following flow works for all coins except eth
+
+    const filteredParams = _.pick(params, ['address', 'feeRate', 'feeTxConfirmTarget']);
+    const response = yield this.bitgo.post(this.url('/sweepWallet'))
+    .send(filteredParams)
+    .result();
+
+    const keychain = yield this.baseCoin.keychains().get({ id: this._wallet.keys[0] });
+    const transactionParams = _.extend({}, params, { txPrebuild: response, keychain: keychain, prv: params.xprv });
+    const signedTransaction = yield this.signTransaction(transactionParams);
+
+    const selectParams = _.pick(params, ['otp']);
+    const finalTxParams = _.extend({}, signedTransaction, selectParams);
+    return this.bitgo.post(this.baseCoin.url('/wallet/' + this._wallet.id + '/tx/send'))
+    .send(finalTxParams)
+    .result();
+  }).call(this).asCallback(callback);
+
+};
+
+/**
  * Freeze a given wallet
  * @param params
  * @param callback
