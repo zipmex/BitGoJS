@@ -11,6 +11,15 @@ const request = require('supertest-as-promised');
 const Promise = require('bluebird');
 const co = Promise.coroutine;
 
+// UnhandledRejection is called when a promise without `catch()` method was rejected.
+// See http://bluebirdjs.com/docs/api/error-management-configuration.html#global-rejection-events
+process.on('unhandledRejection', (reason, promise) => {
+  // In all cases we want to log an error
+  console.error(`unhandledRejection: ${reason} stack=${reason.stack}`);
+  console.error('unhandledRejection: exiting');
+  process.abort();
+});
+
 BitGo.TEST_USER = 'tester@bitgo.com';
 
 if (process.env.BITGOJS_TEST_PASSWORD) {
@@ -231,7 +240,7 @@ BitGo.prototype.authenticateKeychainUpdatePWTest = function(otp, callback) {
 
 const fetchConstants = BitGo.prototype.fetchConstants;
 BitGo.prototype.fetchConstants = function(callback) {
-  return co(function *() {
+  return co(function *fetchConstants() {
     yield fetchConstants.call(this);
     this._constants[this.env].eth = this._constants[this.env].eth || {};
     this._constants[this.env].eth.tokens = this._constants[this.env].eth.tokens || [];
@@ -288,8 +297,7 @@ BitGo.prototype.checkFunded = co(function *checkFunded(agent) {
   balance.gt(60000).should.be.true;
 
   if (balance.lt(60000)) {
-    console.error(`The TETH wallet ${testWalletId} does not have enough funds to run the test suite. The current balance is ${balance}. Please fund this wallet!`);
-    process.exit(1);
+    throw new Error(`The TETH wallet ${testWalletId} does not have enough funds to run the test suite. The current balance is ${balance}. Please fund this wallet!`);
   }
 
   // Test we have enough BTC
@@ -305,8 +313,7 @@ BitGo.prototype.checkFunded = co(function *checkFunded(agent) {
   balance.gt(minimumBalance).should.be.true;
 
   if (balance.lt(minimumBalance)) {
-    console.error(`The TBTC wallet ${wallet.id()} does not have enough funds to run the test suite. The current balance is ${balance}. Please fund this wallet!`);
-    process.exit(1);
+    throw new Error(`The TBTC wallet ${wallet.id()} does not have enough funds to run the test suite. The current balance is ${balance}. Please fund this wallet!`);
   }
 
   const unspentWallet = yield this.coin('tbtc').wallets().getWallet({ id: BitGo.V2.TEST_WALLET2_UNSPENTS_ID });
@@ -320,8 +327,7 @@ BitGo.prototype.checkFunded = co(function *checkFunded(agent) {
   balance.gt(minimumBalance).should.be.true;
 
   if (balance.lt(minimumBalance)) {
-    console.error(`The TBTC wallet ${unspentWallet.id()} does not have enough funds to run the test suite. The current balance is ${balance}. Please fund this wallet!`);
-    process.exit(1);
+    throw new Error(`The TBTC wallet ${unspentWallet.id()} does not have enough funds to run the test suite. The current balance is ${balance}. Please fund this wallet!`);
   }
 });
 
