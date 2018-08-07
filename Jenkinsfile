@@ -20,9 +20,9 @@ pipeline {
         sh 'npm run test'
       }
     }
-    stage('Lint') {
+    stage('Test Integration') {
       steps {
-        sh 'npm run lint'
+        sh 'npm run test-integration'
       }
     }
     stage('Code Coverage') {
@@ -30,9 +30,9 @@ pipeline {
         sh 'npm run coverage'
       }
     }
-    stage('Test Integration') {
+    stage('Lint') {
       steps {
-        sh 'npm run test-integration'
+        sh 'npm run lint'
       }
     }
     stage('Test Report') {
