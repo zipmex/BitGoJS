@@ -13,7 +13,7 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'npm install'
+#        sh 'npm install'
       }
     }
 
@@ -23,21 +23,21 @@ pipeline {
 	  "Unit Test" : {
             node('pool_build') {
 	      checkout scm
-              sh 'npm run test'
+              sh 'cd $WORKSPACE; npm install; npm run test'
             }
 	  },
 
           "Code Coverage" : {
             node('pool_build') {
 	      checkout scm
-              sh 'npm run coverage'
+              sh 'cd $WORKSPACE; npm install; npm run coverage'
             }
           },
 
           "Lint" : {
             node('pool_build') {
 	      checkout scm
-              sh 'npm run lint'
+              sh 'cd $WORKSPACE; npm install; npm run lint'
             }
           }
 	)
