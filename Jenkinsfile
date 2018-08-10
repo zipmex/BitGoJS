@@ -22,18 +22,21 @@ pipeline {
 	parallel (
 	  "Unit Test" : {
             node('pool_build') {
+	      checkout scm
               sh 'npm run test'
             }
 	  },
 
           "Code Coverage" : {
             node('pool_build') {
+	      checkout scm
               sh 'npm run coverage'
             }
           },
 
           "Lint" : {
             node('pool_build') {
+	      checkout scm
               sh 'npm run lint'
             }
           }
