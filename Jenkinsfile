@@ -7,7 +7,7 @@ pipeline {
   stages {
     stage('Initialize') {
       steps {
-        sh 'export BITGOJS_TEST_PASSWORD=${BITGOJS_TEST_PASSWORD}'
+        sh 'set -x; export BITGOJS_TEST_PASSWORD=${BITGOJS_TEST_PASSWORD}'
       }
     }
 
@@ -22,21 +22,33 @@ pipeline {
 	parallel (
 	  "Unit Test" : {
             node('pool_build') {
-	      checkout scm
+	      git(
+		url: 'git@github.com:BitGo/BitGoJS.git',
+		credentialsId: 'bitgo',
+		branch: "$branch"
+	      )
               sh 'cd $WORKSPACE; npm install; npm run test'
             }
 	  },
 
           "Code Coverage" : {
             node('pool_build') {
-	      checkout scm
+              git(
+                url: 'git@github.com:BitGo/BitGoJS.git',
+                credentialsId: 'bitgo',
+                branch: "$branch"
+              )
               sh 'cd $WORKSPACE; npm install; npm run coverage'
             }
           },
 
           "Lint" : {
             node('pool_build') {
-	      checkout scm
+              git(
+                url: 'git@github.com:BitGo/BitGoJS.git',
+                credentialsId: 'bitgo',
+                branch: "$branch"
+              )
               sh 'cd $WORKSPACE; npm install; npm run lint'
             }
           }
