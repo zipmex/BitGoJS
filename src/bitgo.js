@@ -601,7 +601,6 @@ BitGo.prototype.encrypt = function(params) {
   params = params || {};
   common.validateParams(params, ['input', 'password'], []);
 
-  // const randomSalt = sjcl.random.randomWords(2, 0);
   const randomSalt = crypto.randomBytes(8);
   const encryptOptions = {
     iter: 10000,
