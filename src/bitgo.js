@@ -600,9 +600,7 @@ BitGo.prototype.encrypt = function(params) {
   params = params || {};
   common.validateParams(params, ['input', 'password'], []);
 
-  // SJCL internally reuses salts for the same password, so we force a new random salt everytime
-  // We use random.randomWords(2,0) because it's what SJCL uses for randomness by default
-  const randomSalt = sjcl.random.randomWords(2, 0);
+  const randomSalt = crypto.randomBytes(8);
   const encryptOptions = { iter: 10000, ks: 256, salt: randomSalt };
   return sjcl.encrypt(params.password, params.input, encryptOptions);
 };
