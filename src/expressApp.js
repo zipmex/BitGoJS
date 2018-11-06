@@ -282,14 +282,14 @@ module.exports.app = function(args) {
     _.forEach(args.debugnamespace, (ns) => debug.enable(ns));
   }
 
+  if (!args.disableproxy) {
+    configureProxy(app, args);
+  }
+
   // Decorate the client routes
   require('./clientRoutes')(app, args);
 
   configureEnvironment(args);
-
-  if (!args.disableproxy) {
-    configureProxy(app, args);
-  }
 
   return app;
 };
