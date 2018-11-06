@@ -173,6 +173,10 @@ class BaseCoin {
       coins.tzec = require('./coins/tzec');
     }
 
+    if (process.env.BITGO_EXCLUDE_OFC !== 'exclude') {
+      coins.ofc = require('./coins/ofc');
+    }
+
     return coins;
   }
 
