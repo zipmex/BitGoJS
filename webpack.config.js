@@ -142,7 +142,7 @@ module.exports = function setupWebpack(env) {
     optimization: {
       minimizer: [new TerserPlugin({
         terserOptions: {
-          ecma: 6,
+          ecma: 5,
           warnings: true,
           mangle: false,
           keep_classnames: true,
