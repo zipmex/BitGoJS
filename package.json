@@ -65,9 +65,9 @@
     "terser": "^3.10.12"
   },
   "devDependencies": {
-    "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.2",
-    "babel-preset-env": "^1.6.1",
+    "@babel/core": "7.2.0",
+    "@babel/preset-env": "7.2.0",
+    "babel-loader": "8.0.4",
     "browserify": "^16.2.3",
     "bufferutil": "~3.0.5",
     "eslint": "^4.17.0",
@@ -117,5 +117,6 @@
       "test/*.js",
       "test/bitcoin/*.js"
     ]
-  }
+  },
+  "browserslist": ">1%, last 2 versions, Firefox ESR, not dead"
 }
