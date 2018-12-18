@@ -8,7 +8,14 @@ const glob = require('glob');
 function setupRules(env) {
   const rules = [{
     test: /\.wasm$/,
-    type: "webassembly/experimental"
+    type: 'webassembly/experimental'
+  },
+  {
+    test: /\.js$/,
+    exclude: /node_modules/,
+    use: {
+      loader: 'babel-loader'
+    }
   }];
   return rules;
 }
