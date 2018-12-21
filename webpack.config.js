@@ -6,18 +6,25 @@ const glob = require('glob');
 
 // Loaders handle certain extensions and apply transforms
 function setupRules(env) {
-  const rules = [{
-    test: /\.wasm$/,
-    type: 'webassembly/experimental'
-  },
-  {
-    test: /\.js$/,
-    exclude: /node_modules/,
-    use: {
-      loader: 'babel-loader'
+  return [
+    {
+      test: /\.wasm$/,
+      type: 'webassembly/experimental'
+    },
+    {
+      test: /\.js$/,
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: [
+            ['@babel/preset-env', {
+              targets: '>1%, last 2 versions, Firefox ESR, not dead'
+            }]
+          ]
+        }
+      }
     }
-  }];
-  return rules;
+  ];
 }
 
 // Tell Webpack not to bundle these at all when required
@@ -143,7 +150,7 @@ module.exports = function setupWebpack(env) {
     plugins: setupPlugins(env),
 
     resolve: {
-      extensions: [ '.js', '.wasm' ]
+      extensions: ['.js', '.wasm']
     },
 
     optimization: {
@@ -153,7 +160,7 @@ module.exports = function setupWebpack(env) {
           warnings: true,
           mangle: false,
           keep_classnames: true,
-          keep_fnames: true,
+          keep_fnames: true
         }
       })]
     },
