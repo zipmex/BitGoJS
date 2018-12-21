@@ -129,7 +129,7 @@ module.exports = function setupWebpack(env) {
   return {
     mode: env.prod ? 'production' : 'development',
     // Main project entry point
-    entry: path.join(__dirname, 'src', 'index.js'),
+    entry: ['@babel/polyfill', path.join(__dirname, 'src', 'index.js')],
 
     // Output directory and filename
     // Library acts like 'standalone' for browserify, defines it globally if module system not found

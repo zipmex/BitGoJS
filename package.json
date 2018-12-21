@@ -33,6 +33,7 @@
     "audit": "if [ \"$(npm --version | cut -d. -f1)\" -ge \"6\" ]; then npm audit; else echo \"npm >= 6 required to perform audit. skipping...\"; fi"
   },
   "dependencies": {
+    "@babel/polyfill": "^7.2.3",
     "argparse": "~1.0.10",
     "assert": "0.4.9",
     "big.js": "~3.1.3",
