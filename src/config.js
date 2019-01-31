@@ -293,7 +293,7 @@ exports.krsProviders = {
   dai: {
     feeType: 'flatUsd',
     feeAmount: 0, // dai will receive payments off-chain
-    supportedCoins: ['btc', 'eth', 'xlm', 'xrp', 'dash', 'zec', 'ltc', 'bch']
+    supportedCoins: ['btc', 'eth', 'erc', 'xlm', 'xrp', 'dash', 'zec', 'ltc', 'bch']
   }
 };
 
