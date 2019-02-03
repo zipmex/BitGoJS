@@ -113,7 +113,10 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "precise-commits"
+      "pre-commit": "lint-staged"
     }
+  },
+  "lint-staged": {
+    "*.{js,json,md}": ["prettier --write", "git add"]
   }
 }
