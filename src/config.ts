@@ -1,8 +1,8 @@
-const common = require('./common');
-const _ = require('lodash');
+import common = require('./common');
+import _ = require('lodash');
 
 // Estimate for virtual sizes of various tx inputs
-exports.tx = {
+const tx = {
   P2SH_INPUT_SIZE: 296,
   P2SH_P2WSH_INPUT_SIZE: 139,
   P2PKH_INPUT_SIZE: 160, // Uncompressed
@@ -11,14 +11,14 @@ exports.tx = {
 };
 
 // The derivation paths of the different address chains
-exports.chains = {
+const chains = {
   CHAIN_P2SH: 0,
   CHANGE_CHAIN_P2SH: 1,
   CHAIN_SEGWIT: 10,
   CHANGE_CHAIN_SEGWIT: 11
 };
 
-exports.tokens = {
+const tokens = {
   // network name for production environments (prod tokens must be added here)
   bitcoin: {
     eth: {
@@ -259,7 +259,7 @@ exports.tokens = {
 };
 
 const mainnetTokens = {};
-_.forEach(exports.tokens.bitcoin.eth.tokens, function(value) {
+_.forEach(tokens.bitcoin.eth.tokens, function(value) {
   if (mainnetTokens[value.type]) {
     throw new Error('token : ' + value.type + ' duplicated.');
   }
@@ -271,7 +271,7 @@ _.forEach(exports.tokens.bitcoin.eth.tokens, function(value) {
 });
 
 const testnetTokens = {};
-_.forEach(exports.tokens.testnet.eth.tokens, function(value) {
+_.forEach(tokens.testnet.eth.tokens, function(value) {
   if (testnetTokens[value.type]) {
     throw new Error('token : ' + value.type + ' duplicated.');
   }
@@ -294,7 +294,7 @@ const defaults = {
 
 // Supported cross-chain recovery routes. The coin to be recovered is the index, the valid coins for recipient wallets
 // are listed in the array.
-exports.supportedCrossChainRecoveries = {
+const supportedCrossChainRecoveries = {
   btc: ['bch', 'ltc', 'bsv'],
   bch: ['btc', 'ltc', 'bsv'],
   ltc: ['btc', 'bch', 'bsv'],
@@ -302,7 +302,7 @@ exports.supportedCrossChainRecoveries = {
 };
 
 // KRS providers and their fee structures
-exports.krsProviders = {
+const krsProviders = {
   keyternal: {
     feeType: 'flatUsd',
     feeAmount: 99,
@@ -323,15 +323,26 @@ exports.krsProviders = {
   }
 };
 
-exports.bitcoinAverageBaseUrl = 'https://apiv2.bitcoinaverage.com/indices/local/ticker/';
+const bitcoinAverageBaseUrl = 'https://apiv2.bitcoinaverage.com/indices/local/ticker/';
 
 // TODO: once server starts returning eth address keychains, remove bitgoEthAddress
-exports.defaultConstants = (env) => {
+const defaultConstants = (env) => {
 
   if (common.Environments[env] === undefined) {
     throw Error(`invalid environment ${env}`);
   }
 
   const network = common.Environments[env].network;
-  return _.merge({}, defaults, exports.tokens[network]);
+  return _.merge({}, defaults, tokens[network]);
+};
+
+export = {
+  tx,
+  chains,
+  tokens,
+  defaults,
+  supportedCrossChainRecoveries,
+  krsProviders,
+  bitcoinAverageBaseUrl,
+  defaultConstants
 };
