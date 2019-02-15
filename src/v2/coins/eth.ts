@@ -1,11 +1,11 @@
 const BaseCoin = require('../baseCoin');
 const Wallet = require('../wallet');
-const common = require('../../common');
+import common = require('../../common');
 const config = require('../../config');
 const BigNumber = require('bignumber.js');
 const Util = require('../../util');
-const _ = require('lodash');
-const Promise = require('bluebird');
+import * as _ from 'lodash';
+import * as Promise from 'bluebird'
 const request = require('superagent');
 const crypto = require('crypto');
 const prova = require('prova-lib');
@@ -423,7 +423,7 @@ class Eth extends BaseCoin {
     return co(function *() {
       const backupHDNode = utxoLib.HDNode.fromBase58(backupKey);
       const backupSigningKey = backupHDNode.getKey().getPublicKeyBuffer();
-      const response = {
+      const response: any = {
         tx: ethTx.serialize().toString('hex'),
         userKey,
         backupKey,
@@ -595,8 +595,13 @@ class Eth extends BaseCoin {
         tx.sign(backupSigningKey);
       }
 
+<<<<<<< HEAD
       const signedTx = {
         id: optionalDeps.ethUtil.bufferToHex(tx.hash(true)),
+=======
+      const signedTx: any = {
+        id: ethUtil.bufferToHex(tx.hash(true)),
+>>>>>>> f14ccc8... Add more typescript interfaces and imports
         tx: tx.serialize().toString('hex')
       };
 

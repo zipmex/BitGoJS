@@ -6,8 +6,8 @@
 
 const Wallet = require('../../src/wallet');
 const TestBitGo = require('../lib/test_bitgo');
-const _ = require('lodash');
-const Promise = require('bluebird');
+import * as _ from 'lodash';
+import * as Promise from 'bluebird'
 const co = Promise.coroutine;
 const common = require('../../src/common');
 const bitcoin = require('../../src/bitcoin');
@@ -237,7 +237,7 @@ describe('Wallet Prototype Methods', function() {
 
     it('default p2sh', co(function *() {
       const p2shAddress = fakeWallet.generateAddress({ path: '/0/13', segwit: false });
-      const unspent = {
+      const unspent: any = {
         addresses: [
           '2NCEDmmKNNnqKvnWw7pE3RLzuFe5aHHVy1X'
         ],
@@ -295,7 +295,7 @@ describe('Wallet Prototype Methods', function() {
 
     it('BCH p2sh', co(function *() {
       const p2shAddress = fakeWallet.generateAddress({ path: '/0/13', segwit: false });
-      const unspent = {
+      const unspent: any = {
         addresses: [
           '2NCEDmmKNNnqKvnWw7pE3RLzuFe5aHHVy1X'
         ],
@@ -354,7 +354,7 @@ describe('Wallet Prototype Methods', function() {
 
     it('default segwit', co(function *() {
       const segwitAddress = fakeWallet.generateAddress({ path: '/10/13', segwit: true });
-      const unspent = {
+      const unspent: any = {
         addresses: [
           '2MxKkH8yB3S9YWmTQRbvmborYQyQnH5petP'
         ],
@@ -412,7 +412,7 @@ describe('Wallet Prototype Methods', function() {
 
     it('BCH segwit should fail', co(function *() {
       const segwitAddress = fakeWallet.generateAddress({ path: '/10/13', segwit: true });
-      const unspent = {
+      const unspent: any = {
         addresses: [
           '2MxKkH8yB3S9YWmTQRbvmborYQyQnH5petP'
         ],
@@ -467,7 +467,7 @@ describe('Wallet Prototype Methods', function() {
 
     it('3/5 p2sh', co(function *() {
       const p2shAddress = fakeWallet.generateAddress({ path: '/1/13', segwit: false, keychains: keychains, threshold: 3 });
-      const unspent = {
+      const unspent: any = {
         addresses: [
           '2NBK1thw7RpffyyCGa2aePqueJSUA7pENwf'
         ],
@@ -531,7 +531,7 @@ describe('Wallet Prototype Methods', function() {
 
     it('3/5 segwit', co(function *() {
       const segwitAddress = fakeWallet.generateAddress({ path: '/11/13', segwit: true, keychains: keychains, threshold: 3 });
-      const unspent = {
+      const unspent: any = {
         addresses: [
           '2N2zJWhXvUnRy5KDZKpqkQLGgK8sT6hhyGz'
         ],
@@ -631,7 +631,7 @@ describe('Wallet Prototype Methods', function() {
         id: 61330882
       };
       const addresses = [p2shAddress, segwitAddress];
-      const unspents = [p2shUnspent, segwitUnspent].map((unspent, index) => {
+      const unspents = [p2shUnspent, segwitUnspent].map((unspent: any, index) => {
         const address = addresses[index];
         _.extend(unspent, address);
         unspent.value = unspent.value_int;
