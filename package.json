@@ -87,6 +87,7 @@
     "karma": "4.0.1",
     "karma-chrome-launcher": "0.1.12",
     "karma-mocha": "0.1.10",
+    "lint-staged": "8.1.4",
     "mocha": "4.1.0",
     "mocha-junit-reporter": "1.17.0",
     "mocha-lcov-reporter": "0.0.2",
@@ -122,8 +123,8 @@
     }
   },
   "lint-staged": {
-    "**/*.{js,json,md}": [
-      "prettier --write",
+    "**/*.{ts,js,json,md}": [
+      "precise-commits",
       "git add"
     ]
   }
