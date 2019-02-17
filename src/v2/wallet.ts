@@ -806,8 +806,10 @@ Wallet.prototype.simulateWebhook = function(params, callback) {
   params = params || {};
   common.validateParams(params, ['webhookId'], ['transferId', 'pendingApprovalId'], callback);
 
-  assert(!!params.transferId || !!params.pendingApprovalId, 'must supply either transferId or pendingApprovalId');
-  assert(!!params.transferId ^ !!params.pendingApprovalId, 'must supply either transferId or pendingApprovalId, but not both');
+  const hasTransferId = !!params.transferId;
+  const hasPendingApprovalId = !!params.pendingApprovalId;
+  assert(hasTransferId || hasPendingApprovalId, 'must supply either transferId or pendingApprovalId');
+  assert(hasTransferId !== hasPendingApprovalId, 'must supply either transferId or pendingApprovalId, but not both');
 
   // depending on the coin type of the wallet, the txHash has to adhere to its respective format
   // but the server takes care of that
@@ -1253,7 +1255,12 @@ Wallet.prototype.accelerateTransaction = function(params, callback) {
  */
 Wallet.prototype.submitTransaction = function(params, callback) {
   common.validateParams(params, [], ['otp', 'txHex'], callback);
-  assert(!!params.txHex ^ !!params.halfSigned, 'must supply either txHex or halfSigned, but not both');
+  const hasTxHex = !!params.txHex;
+  const hasHalfSigned = !!params.halfSigned;
+  assert(
+    (hasTxHex || hasHalfSigned) && hasTxHex !== hasHalfSigned,
+    'must supply either txHex or halfSigned, but not both'
+  );
   return this.bitgo.post(this.baseCoin.url('/wallet/' + this.id() + '/tx/send'))
   .send(params)
   .result()
