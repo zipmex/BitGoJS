@@ -1,6 +1,6 @@
-const express = require('express');
-const httpProxy = require('http-proxy');
-const url = require('url');
+import express = require('express');
+import httpProxy = require('http-proxy');
+import url = require('url');
 const morgan = require('morgan');
 const Promise = require('bluebird');
 const fs = Promise.promisifyAll(require('fs'));
@@ -105,7 +105,8 @@ function configureProxy(app, { env, timeout = DEFAULT_TIMEOUT }) {
   // Mount the proxy middleware
   const options = {
     timeout: timeout,
-    proxyTimeout: timeout
+    proxyTimeout: timeout,
+    secure: null,
   };
 
   if (common.Environments[env].network === 'testnet') {
@@ -256,7 +257,7 @@ module.exports.parseArgs = function() {
   });
 
   parser.addArgument(['-t', '--timeout'], {
-    defaultValue: process.env.BITGO_TIMEOUT * 1000 || DEFAULT_TIMEOUT,
+    defaultValue: (process.env.BITGO_TIMEOUT as any) * 1000 || DEFAULT_TIMEOUT,
     help: 'Proxy server timeout in milliseconds'
   });
 
@@ -272,7 +273,7 @@ module.exports.parseArgs = function() {
  * @param baseUri
  * @return {Function}
  */
-module.exports.startup = function({ env, customrooturi, custombitcoinnetwork } = {}, baseUri) {
+module.exports.startup = function({ env, customrooturi, custombitcoinnetwork } = {} as any, baseUri) {
   return function() {
     console.log('BitGo-Express running');
     console.log(`Environment: ${env}`);
@@ -293,7 +294,7 @@ module.exports.startup = function({ env, customrooturi, custombitcoinnetwork } =
  * @param app
  * @return {Server}
  */
-module.exports.createServer = co(function *(args = {}, tls = false, app) {
+module.exports.createServer = co(function *(args = {} as any, tls = false, app) {
   return tls ? yield createHttpsServer(args, app) : createHttpServer(app);
 });
 

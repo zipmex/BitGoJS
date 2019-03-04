@@ -595,14 +595,9 @@ class Eth extends BaseCoin {
         tx.sign(backupSigningKey);
       }
 
-<<<<<<< HEAD
-      const signedTx = {
-        id: optionalDeps.ethUtil.bufferToHex(tx.hash(true)),
-=======
       const signedTx: any = {
-        id: ethUtil.bufferToHex(tx.hash(true)),
->>>>>>> f14ccc8... Add more typescript interfaces and imports
-        tx: tx.serialize().toString('hex')
+        id: optionalDeps.ethUtil.bufferToHex(tx.hash(true)),
+        tx: tx.serialize().toString('hex'),
       };
 
       if (isKrsRecovery) {
