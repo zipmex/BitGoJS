@@ -6,9 +6,10 @@
 //
 
 import bitcoin = require('./bitcoin');
-import Wallet = require('./wallet');
-import common = require('./common');
-import * as _ from 'lodash';
+const Wallet = require('./wallet');
+const common = require('./common');
+const _ = require('lodash');
+const co = require('bluebird').coroutine;
 
 //
 // Constructor
@@ -131,13 +132,15 @@ Wallets.prototype.listShares = function(params, callback) {
 // Params:
 //    walletShareId - the wallet share to get information on
 //
-Wallets.prototype.resendShareInvite = async function(params) {
-  params = params || {};
-  common.validateParams(params, ['walletShareId']);
+Wallets.prototype.resendShareInvite = function(params, callback) {
+  return co(function *() {
+    params = params || {};
+    common.validateParams(params, ['walletShareId'], [], callback);
 
-  const urlParts = params.walletShareId + '/resendemail';
-  return this.bitgo.post(this.bitgo.url('/walletshare/' + urlParts))
-  .result();
+    const urlParts = params.walletShareId + '/resendemail';
+    return this.bitgo.post(this.bitgo.url('/walletshare/' + urlParts))
+    .result();
+  }).call(this).asCallback(callback);
 };
 
 //
@@ -265,7 +268,10 @@ Wallets.prototype.acceptShare = function(params, callback) {
 //   address: <address>
 //   key: <key, in WIF format>
 // }
-Wallets.prototype.createKey = function(params = {}) {
+Wallets.prototype.createKey = function(params) {
+  params = params || {};
+  common.validateParams(params);
+
   const key = bitcoin.makeRandomKey();
   return {
     address: key.getAddress(),
@@ -321,7 +327,7 @@ Wallets.prototype.createWalletWithKeychains = function(params, callback) {
   }
 
   const backupParams = _(params).pick('backupXpub', 'backupXpubProvider').keys().value();
-  if (backupParams.length > 1) {
+  if (backupParams > 1) {
     throw new Error('Cannot provide more than one backupXpub or backupXpubProvider flag');
   }
 
