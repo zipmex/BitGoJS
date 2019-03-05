@@ -324,7 +324,7 @@ describe('Bitgo Express', function() {
 
       expressApp(args);
 
-      httpProxy.createProxyServer.should.have.been.calledOnceWith({ timeout: 305 * 1000, proxyTimeout: 305 * 1000 });
+      httpProxy.createProxyServer.should.have.been.calledOnceWith({ timeout: 305 * 1000, secure: null, proxyTimeout: 305 * 1000 });
       onStub.should.have.been.calledThrice();
       onStub.should.have.been.calledWith('proxyReq');
       onStub.should.have.been.calledWith('error');

@@ -301,6 +301,7 @@ BitGo.prototype.checkFunded = co(function *checkFunded() {
   // we don't spend for already 'failed' test runs (e.g., spending ETH when we don't have enough BTC)
 
   // Test we have enough ETH
+  yield this.authenticateTestUser(this.testUserOTP());
   const testWalletId = BitGo.V2.TEST_ETH_WALLET_ID;
 
   const testWallet = yield this.coin('teth').wallets().get({ id: testWalletId });
@@ -314,7 +315,6 @@ BitGo.prototype.checkFunded = co(function *checkFunded() {
   }
 
   // Test we have enough BTC
-  yield this.authenticateTestUser(this.testUserOTP());
   const wallet = yield this.coin('tbtc').wallets().getWallet({ id: BitGo.V2.TEST_WALLET1_ID });
 
   // Check we have enough in the wallet to run test suite

@@ -7,8 +7,8 @@ set -x
 
 ROOT="."
 MOCHA_OPTS="--require ts-node/register --timeout 20000 --reporter list --exit --recursive"
-UNIT_TESTS="$ROOT/test/unit/*.ts $ROOT/test/v2/unit/*.ts"
-INTEGRATION_TESTS="$ROOT/test/v2/integration/*.ts"
+UNIT_TESTS="$ROOT/test/unit/*.ts $ROOT/test/unit/**/*.ts $ROOT/test/v2/unit/*.ts $ROOT/test/v2/unit/**/*.ts"
+INTEGRATION_TESTS="$ROOT/test/v2/integration/*.ts $ROOT/test/v2/integration/**/*.ts"
 NYC="$ROOT/node_modules/.bin/nyc"
 MOCHA="$ROOT/node_modules/.bin/mocha"
 ESLINT="$ROOT/node_modules/.bin/eslint"
