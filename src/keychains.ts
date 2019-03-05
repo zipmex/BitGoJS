@@ -6,11 +6,13 @@
 //
 
 import crypto = require('crypto');
-import common = require('./common');
-import Util = require('./util');
-import bitcoin = require('./bitcoin');
-import * as _ from 'lodash';
+const common = require('./common');
+const Util = require('./util');
+const bitcoin = require('./bitcoin');
+const _ = require('lodash');
 let ethereumUtil;
+const Promise = require('bluebird');
+const co = Promise.coroutine;
 
 try {
   ethereumUtil = require('ethereumjs-util');
@@ -184,22 +186,24 @@ Keychains.prototype.list = function(params, callback) {
  *  }
  *  @returns result.version {Number}
  */
-Keychains.prototype.updatePassword = async function(params) {
-  common.validateParams(params, ['oldPassword', 'newPassword'], []);
-  const encrypted = await this.bitgo.post(this.bitgo.url('/user/encrypted')).result();
-  const newKeychains = {};
-  const self = this;
-  _.forOwn(encrypted.keychains, function keychainsForOwn(oldEncryptedXprv, xpub) {
-    try {
-      const decryptedPrv = self.bitgo.decrypt({ input: oldEncryptedXprv, password: params.oldPassword });
-      const newEncryptedPrv = self.bitgo.encrypt({ input: decryptedPrv, password: params.newPassword });
-      newKeychains[xpub] = newEncryptedPrv;
-    } catch (e) {
-      // decrypting the keychain with the old password didn't work so we just keep it the way it is
-      newKeychains[xpub] = oldEncryptedXprv;
-    }
-  });
-  return { keychains: newKeychains, version: encrypted.version };
+Keychains.prototype.updatePassword = function(params, callback) {
+  return co(function *coUpdatePassword() {
+    common.validateParams(params, ['oldPassword', 'newPassword'], [], callback);
+    const encrypted = yield this.bitgo.post(this.bitgo.url('/user/encrypted')).result();
+    const newKeychains = {};
+    const self = this;
+    _.forOwn(encrypted.keychains, function keychainsForOwn(oldEncryptedXprv, xpub) {
+      try {
+        const decryptedPrv = self.bitgo.decrypt({ input: oldEncryptedXprv, password: params.oldPassword });
+        const newEncryptedPrv = self.bitgo.encrypt({ input: decryptedPrv, password: params.newPassword });
+        newKeychains[xpub] = newEncryptedPrv;
+      } catch (e) {
+        // decrypting the keychain with the old password didn't work so we just keep it the way it is
+        newKeychains[xpub] = oldEncryptedXprv;
+      }
+    });
+    return { keychains: newKeychains, version: encrypted.version };
+  }).call(this).asCallback(callback);
 };
 
 //
