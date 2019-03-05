@@ -2,5 +2,5 @@ node_modules
 .idea
 public
 src/sjcl.min.js
-build
+ts-out
 browser
