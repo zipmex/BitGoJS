@@ -341,7 +341,7 @@ const getEthNetwork = function() {
  * @param optionalCallback {Function} if callback provided, must be a function
  * @returns {boolean} true if validated, throws with reason otherwise
  */
-const validateParams = function(params, expectedParams, optionalParams, optionalCallback) {
+const validateParams = function(params, expectedParams, optionalParams = [], optionalCallback = undefined) {
   if (!_.isObject(params)) {
     throw new Error('Must pass in parameters dictionary');
   }
@@ -357,7 +357,6 @@ const validateParams = function(params, expectedParams, optionalParams, optional
     }
   });
 
-  optionalParams = optionalParams || [];
   optionalParams.forEach(function(optionalParam) {
     if (params[optionalParam] && !_.isString(params[optionalParam])) {
       throw new Error('Expecting parameter string: ' + optionalParam + ' but found ' + typeof(params[optionalParam]));

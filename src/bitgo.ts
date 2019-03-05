@@ -213,7 +213,7 @@ const BitGo = function(params) {
   this.env = env;
 
   common.setNetwork(common.Environments[env].network);
-  common.setEthNetwork();
+  common.setEthNetwork(undefined);
   common.setRmgNetwork(common.Environments[env].rmgNetwork);
 
   if (!this._baseUrl) {
