@@ -1,4 +1,4 @@
-const bodyParser = require('body-parser');
+import bodyParser = require('body-parser');
 
 const BitGoJS = require('./index');
 const TransactionBuilder = require('./transactionBuilder');
@@ -287,7 +287,7 @@ const handleV2GenerateWallet = function(req) {
 };
 
 // handle v2 approve transaction
-const handleV2PendingApproval = co(function*(req) {
+const handleV2PendingApproval = co(function *(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
   const params = req.body || {};
@@ -306,7 +306,7 @@ const handleV2CreateLocalKeyChain = function(req) {
 };
 
 // handle wallet share
-const handleV2ShareWallet = co(function*(req) {
+const handleV2ShareWallet = co(function *(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
   const wallet = yield coin.wallets().get({ id: req.params.id });
@@ -314,7 +314,7 @@ const handleV2ShareWallet = co(function*(req) {
 });
 
 // handle accept wallet share
-const handleV2AcceptWalletShare = co(function*(req) {
+const handleV2AcceptWalletShare = co(function *(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
   const params = _.extend({}, req.body, { walletShareId: req.params.id });
@@ -322,7 +322,7 @@ const handleV2AcceptWalletShare = co(function*(req) {
 });
 
 // handle wallet sign transaction
-const handleV2SignTxWallet = co(function*(req) {
+const handleV2SignTxWallet = co(function *(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
   const wallet = yield coin.wallets().get({ id: req.params.id });
@@ -337,7 +337,7 @@ const handleV2SignTx = function(req) {
 };
 
 // handle wallet recover token
-const handleV2RecoverToken = co(function*(req) {
+const handleV2RecoverToken = co(function *(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
 
@@ -346,7 +346,7 @@ const handleV2RecoverToken = co(function*(req) {
 });
 
 // handle wallet fanout unspents
-const handleV2ConsolidateUnspents = co(function*(req) {
+const handleV2ConsolidateUnspents = co(function *(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
   const wallet = yield coin.wallets().get({ id: req.params.id });
@@ -354,7 +354,7 @@ const handleV2ConsolidateUnspents = co(function*(req) {
 });
 
 // handle wallet fanout unspents
-const handleV2FanOutUnspents = co(function*(req) {
+const handleV2FanOutUnspents = co(function *(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
   const wallet = yield coin.wallets().get({ id: req.params.id });
@@ -362,7 +362,7 @@ const handleV2FanOutUnspents = co(function*(req) {
 });
 
 // handle wallet sweep
-const handleV2Sweep = co(function* handleV2Sweep(req) {
+const handleV2Sweep = co(function *handleV2Sweep(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
   const wallet = yield coin.wallets().get({ id: req.params.id });
@@ -370,7 +370,7 @@ const handleV2Sweep = co(function* handleV2Sweep(req) {
 });
 
 // handle CPFP accelerate transaction creation
-const handleV2AccelerateTransaction = co(function* handleV2AccelerateTransaction(req) {
+const handleV2AccelerateTransaction = co(function *handleV2AccelerateTransaction(req) {
   const bitgo = req.bitgo;
   const coin = bitgo.coin(req.params.coin);
   const wallet = yield coin.wallets().get({ id: req.params.id });
@@ -486,8 +486,8 @@ const redirectRequest = function(bitgo, method, url, req, next) {
   next();
 };
 
-const apiResponse = function(status, result, message) {
-  const err = new Error(message);
+const apiResponse = function(status, result, message = '') {
+  const err: any = new Error(message);
   err.status = status;
   err.result = result;
   return err;
@@ -506,7 +506,14 @@ const parseBody = function(req, res, next) {
 
 // Create the bitgo object in the request
 const prepareBitGo = function(args) {
-  const params = { env: args.env };
+  const params = {
+    env: args.env,
+    customRootURI: null,
+    customBitcoinNetwork: null,
+    userAgent: null,
+    accessToken: null,
+  };
+
   if (args.customrooturi) {
     params.customRootURI = args.customrooturi;
   }

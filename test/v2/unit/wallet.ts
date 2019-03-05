@@ -2,7 +2,7 @@
 // Tests for Wallets
 //
 
-import * as should from 'should';;
+import * as should from 'should';
 const sinon = require('sinon');
 require('should-sinon');
 require('../lib/asserts');

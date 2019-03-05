@@ -1,4 +1,4 @@
-const should = require('should');
+import * as should from 'should';
 require('should-http');
 
 const request = require('supertest-as-promised');
@@ -9,14 +9,9 @@ const nock = require('nock');
 const common = require('../../../src/common');
 
 describe('Bitgo Express', function() {
-  if (process.browser) {
-    // Bitgo Express tests not supported in browser
-    this.skip();
-  }
-
   let agent;
-  before(() => {
-    if (process.browser) {
+  before(function() {
+    if ((process as any).browser) {
       // Bitgo Express tests not supported in browser
       this.skip();
     }

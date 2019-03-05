@@ -3,7 +3,7 @@
 //
 
 import { strict as assert } from 'assert';
-import * as should from 'should';;
+import * as should from 'should';
 import * as Promise from 'bluebird';
 const co = Promise.coroutine;
 const TestV2BitGo = require('../../lib/test_bitgo');

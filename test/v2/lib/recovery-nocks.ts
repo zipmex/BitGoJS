@@ -1,4 +1,4 @@
-const nock = require('nock');
+import * as nock from 'nock';
 nock.enableNetConnect();
 
 module.exports.nockBtcRecovery = function nockBtcRecovery(isKrsRecovery) {

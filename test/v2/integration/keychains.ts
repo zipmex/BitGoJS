@@ -2,7 +2,7 @@
 // Test for Keychains
 //
 
-import 'should';;
+import 'should';
 import * as Promise from 'bluebird';
 const co = Promise.coroutine;
 import * as _ from 'lodash';

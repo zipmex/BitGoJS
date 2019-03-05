@@ -968,7 +968,7 @@ class AbstractUtxoCoin extends BaseCoin {
     return areAllSignaturesValid;
   }
 
-  explainTransaction(params = {}) {
+  explainTransaction(params = {} as any) {
     const { txHex, txInfo } = params;
 
     if (!txHex || !_.isString(txHex) || !txHex.match(/^([a-f0-9]{2})+$/i)) {
@@ -984,8 +984,6 @@ class AbstractUtxoCoin extends BaseCoin {
 
     const id = transaction.getId();
     let changeAddresses = [];
-    let spendAmount = 0;
-    let changeAmount = 0;
     if (txInfo && txInfo.changeAddresses) {
       changeAddresses = txInfo.changeAddresses;
     }
@@ -999,6 +997,8 @@ class AbstractUtxoCoin extends BaseCoin {
       changeAmount: number;
       fee?: any;
       locktime?: number;
+      inputSignatures?: any;
+      signatures?: any;
     }
 
     const explanation: Explanation = {
@@ -1008,7 +1008,7 @@ class AbstractUtxoCoin extends BaseCoin {
       changeOutputs: [],
       outputAmount: 0,
       changeAmount: 0,
-    } as Explanation;
+    };
 
     transaction.outs.forEach((currentOutput) => {
       const currentAddress = this.getCoinLibrary().address.fromOutputScript(currentOutput.script, this.network);
@@ -1086,7 +1086,8 @@ class AbstractUtxoCoin extends BaseCoin {
 
           if (hasWitnessScript) {
             // p2sh-p2wsh
-            const parentTxId = Buffer.from(input.hash).reverse().toString('hex');
+            const parentTxIdBuffer = Buffer.from(input.hash).reverse() as Buffer;
+            const parentTxId = parentTxIdBuffer.toString('hex');
             const inputId = `${parentTxId}:${input.index}`;
             const amount = unspentValues[inputId];
 

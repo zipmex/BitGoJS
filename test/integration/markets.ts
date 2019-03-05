@@ -5,7 +5,7 @@
 //
 
 import { strict as assert } from 'assert';
-import 'should';;
+import 'should';
 const BitGoJS = require('../../src/index');
 
 describe('Market', function() {

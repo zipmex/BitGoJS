@@ -1,4 +1,4 @@
-require('should');
+import 'should';
 require('should-http');
 const request = require('supertest-as-promised');
 const _ = require('lodash');
@@ -12,7 +12,7 @@ describe('Bitgo Express', function() {
   let bitgo;
 
   before(function() {
-    if (process.browser) {
+    if ((process as any).browser) {
       // Bitgo Express tests not supported in browser
       this.skip();
     }

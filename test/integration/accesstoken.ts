@@ -5,7 +5,7 @@
 //
 
 import { strict as assert } from 'assert';
-import * as should from 'should';;
+import * as should from 'should';
 const moment = require('moment');
 import * as _ from 'lodash';
 

@@ -67,7 +67,10 @@ describe('Bitgo Express', function() {
       const args = {
         env: 'prod',
         bind: '1',
-        disableenvcheck: true
+        disableenvcheck: true,
+        disablessl: false,
+        crtpath: null,
+        keypath: null,
       };
 
       (() => expressApp(args)).should.throw(TlsConfigurationError);
@@ -97,7 +100,8 @@ describe('Bitgo Express', function() {
       const args = {
         env: 'test',
         bind: '1',
-        keypath: '/tmp/key.pem'
+        keypath: '/tmp/key.pem',
+        crtpath: null,
       };
 
       (() => expressApp(args)).should.throw(TlsConfigurationError);
@@ -153,12 +157,12 @@ describe('Bitgo Express', function() {
 
       startup(args, 'base')();
 
-      console.log.should.have.callCount(3);
-      console.log.should.have.been.calledWith('BitGo-Express running');
-      console.log.should.have.been.calledWith(`Environment: ${args.env}`);
-      console.log.should.have.been.calledWith('Base URI: base');
+      (console.log.should.have as any).callCount(3);
+      (console.log.should.have.been as any).calledWith('BitGo-Express running');
+      (console.log.should.have.been as any).calledWith(`Environment: ${args.env}`);
+      (console.log.should.have.been as any).calledWith('Base URI: base');
 
-      console.log.restore();
+      (console.log as any).restore();
     });
 
     it('should output custom root uri information upon server startup', () => {
@@ -171,13 +175,13 @@ describe('Bitgo Express', function() {
 
       startup(args, 'base')();
 
-      console.log.should.have.callCount(4);
-      console.log.should.have.been.calledWith('BitGo-Express running');
-      console.log.should.have.been.calledWith(`Environment: ${args.env}`);
-      console.log.should.have.been.calledWith('Base URI: base');
-      console.log.should.have.been.calledWith(`Custom root URI: ${args.customrooturi}`);
+      (console.log.should.have as any).callCount(4);
+      (console.log.should.have.been as any).calledWith('BitGo-Express running');
+      (console.log.should.have.been as any).calledWith(`Environment: ${args.env}`);
+      (console.log.should.have.been as any).calledWith('Base URI: base');
+      (console.log.should.have.been as any).calledWith(`Custom root URI: ${args.customrooturi}`);
 
-      console.log.restore();
+      (console.log as any).restore();
     });
 
     it('should output custom bitcoin network information upon server startup', () => {
@@ -190,13 +194,13 @@ describe('Bitgo Express', function() {
 
       startup(args, 'base')();
 
-      console.log.should.have.callCount(4);
-      console.log.should.have.been.calledWith('BitGo-Express running');
-      console.log.should.have.been.calledWith(`Environment: ${args.env}`);
-      console.log.should.have.been.calledWith('Base URI: base');
-      console.log.should.have.been.calledWith(`Custom bitcoin network: ${args.custombitcoinnetwork}`);
+      (console.log.should.have as any).callCount(4);
+      (console.log.should.have.been as any).calledWith('BitGo-Express running');
+      (console.log.should.have.been as any).calledWith(`Environment: ${args.env}`);
+      (console.log.should.have.been as any).calledWith('Base URI: base');
+      (console.log.should.have.been as any).calledWith(`Custom bitcoin network: ${args.custombitcoinnetwork}`);
 
-      console.log.restore();
+      (console.log as any).restore();
     });
 
     it('should create base URIs', () => {
@@ -231,11 +235,11 @@ describe('Bitgo Express', function() {
 
       path.resolve.should.have.been.calledWith(args.logfile);
       fs.createWriteStream.should.have.been.calledOnceWith(args.logfile, { flags: 'a' });
-      console.log.should.have.been.calledOnceWith(`Log location: ${args.logfile}`);
+      (console.log.should.have.been as any).calledOnceWith(`Log location: ${args.logfile}`);
 
       path.resolve.restore();
       fs.createWriteStream.restore();
-      console.log.restore();
+      (console.log as any).restore();
     });
 
     it('should enable specified debug namespaces', () => {
@@ -257,7 +261,8 @@ describe('Bitgo Express', function() {
 
     it('should configure a custom root URI', () => {
       const args = {
-        customrooturi: 'customroot'
+        customrooturi: 'customroot',
+        env: null,
       };
 
       expressApp(args);
@@ -268,7 +273,8 @@ describe('Bitgo Express', function() {
 
     it('should configure a custom bitcoin network', () => {
       const args = {
-        custombitcoinnetwork: 'custombitcoinnetwork'
+        custombitcoinnetwork: 'custombitcoinnetwork',
+        env: null,
       };
 
       expressApp(args);

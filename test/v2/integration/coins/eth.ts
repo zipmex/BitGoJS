@@ -1,4 +1,4 @@
-import * as should from 'should';;
+import * as should from 'should';
 import * as Promise from 'bluebird';
 const co = Promise.coroutine;
 
@@ -21,7 +21,7 @@ describe('ETH:', function() {
       const ethKeychains = bitgo.coin('eth').keychains();
       try {
         ethKeychains.createBitGo();
-        should.fail();
+        throw new Error();
       } catch (e) {
         e.message.should.containEql('expecting enterprise when adding BitGo key');
       }

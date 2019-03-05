@@ -1,8 +1,4 @@
-if (process.browser) {
-  throw new Error('bitgo express tests not supported in browser');
-}
-
-const request = require('supertest-as-promised');
+import request = require('supertest-as-promised');
 const Promise = require('bluebird');
 const co = Promise.coroutine;
 const BN = require('ethereumjs-util').BN;
@@ -23,6 +19,10 @@ describe('Bitgo Express TETH v2', function() {
   };
 
   before(co(function *() {
+    if ((process as any).browser) {
+      this.skip();
+    }
+
     const args = {
       debug: false,
       env: 'test',

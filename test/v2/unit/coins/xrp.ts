@@ -1,5 +1,5 @@
 import { strict as assert } from 'assert';
-import 'should';;
+import 'should';
 
 import * as Promise from 'bluebird';
 const co = Promise.coroutine;
