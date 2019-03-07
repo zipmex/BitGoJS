@@ -21,7 +21,7 @@ echo "Using $ROOT as root directory"
 # only run audit, integration tests, and code coverage reports on node 10, since these should not be dependent on node versions
 if [[ "$(node --version | cut -d. -f1)" == "v10" ]]; then
     npm audit
-    "$NYC" -- "$MOCHA" ${MOCHA_OPTS} ${UNIT_TEST_DIRS} ${INTEGRATION_TEST_DIRS}
+    "$NYC" -- "$MOCHA" ${MOCHA_OPTS} ${UNIT_TESTS} ${INTEGRATION_TESTS}
 else
     # on all other platforms, just run unit tests
     "$MOCHA" ${MOCHA_OPTS} ${UNIT_TESTS}
