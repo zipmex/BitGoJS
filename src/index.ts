@@ -4,7 +4,7 @@
 // Copyright 2014, BitGo, Inc.  All Rights Reserved.
 //
 import common = require('./common');
-const bitgo = module.exports;
+const bitgo: any = {};
 bitgo.BitGo = require('./bitgo');
 
 // Expose bitcoin and sjcl
@@ -33,3 +33,5 @@ bitgo.getNetworkObj = function() {
 };
 
 bitgo.setNetwork('testnet');
+
+export = bitgo;

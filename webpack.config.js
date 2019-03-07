@@ -122,7 +122,7 @@ function setupPlugins(env) {
 function getTestConfig(env) {
   return {
     // Take everything in the test directory
-    entry: glob.sync(path.join(__dirname, 'test', '**', '*.js')),
+    entry: glob.sync(path.join(__dirname, 'test', '**', '*.ts')),
 
     // Output everything into browser/tests.js
     output: {
@@ -156,7 +156,7 @@ module.exports = function setupWebpack(env) {
       extensions: ['.ts', '.js'],
     },
     // Main project entry point
-    entry: path.join(__dirname, 'src', 'index.js'),
+    entry: path.join(__dirname, 'src', 'index.ts'),
 
     // Output directory and filename
     // Library acts like 'standalone' for browserify, defines it globally if module system not found
@@ -178,5 +178,6 @@ module.exports = function setupWebpack(env) {
 
     // Create a source map for the bundled code (dev and test only)
     devtool: !env.prod && 'source-map',
+    mode: env.prod ? 'production' : 'development'
   };
 };
