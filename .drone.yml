@@ -1,0 +1,20 @@
+pipeline:
+  sdk build:
+    image: node:6.12.3
+    commands: 
+      - nvm install 10
+      - npm install -g codecov
+      - npm ci
+
+  sdk run sdk-test:
+    group: test
+    image: node:6.12.3
+    commands: 
+      - npm run test-node
+      - npm run test-travis
+
+  sdk run coverage:
+    group: test
+    image: node:6.12.3
+    commands: 
+      - npm run coverage
