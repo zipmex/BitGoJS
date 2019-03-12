@@ -1,26 +1,13 @@
 pipeline:
-  sdk build:
-    image: alpine:latest
+  Node.js 10:
+    image: ubuntu:latest
     commands: 
-      - apk add curl bash npm
-      - touch ~/.bashrc
-      - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.32.1/install.sh | bash
+      - apt update && apt upgrade -y
+      - apt install dialog -y
+      - apt install wget -y
+      - wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
       - . ~/.bashrc
       - nvm install 10
-      - npm config delete prefix
-      - npm config set prefix $NVM_DIR/versions/node/v10.15.3
       - npm install -g codecov
       - npm ci
-
-  sdk run sdk-test:
-    group: test
-    image: alpine:latest
-    commands: 
       - npm run test-travis
-      - npm run test-node
-
-  sdk run coverage:
-    group: test
-    image: alpine:latest
-    commands: 
-      - npm run coverage
