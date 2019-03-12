@@ -14,7 +14,6 @@ pipeline:
     group: test
     image: node:6.12.3
     commands: 
-      - npm run test-node
       - npm run test-travis
 
   sdk run coverage:
