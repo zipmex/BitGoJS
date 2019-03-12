@@ -1,20 +1,23 @@
 pipeline:
   sdk build:
-    image: node:10.15.3
+    image: node:6.12.3
     commands: 
+      - apk add curl bash npm
+      - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.32.1/install.sh | bash
+      - export NVM_DIR="/root/.nvm" && . "$NVM_DIR/nvm.sh"
       - nvm install 10
       - npm install -g codecov
       - npm ci
 
   sdk run sdk-test:
     group: test
-    image: node:10.15.3
+    image: node:6.12.3
     commands: 
       - npm run test-travis
       - npm run test-node
 
   sdk run coverage:
     group: test
-    image: node:10.15.3
+    image: node:6.12.3
     commands: 
       - npm run coverage
