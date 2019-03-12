@@ -2,10 +2,13 @@ pipeline:
   sdk build:
     image: alpine:latest
     commands: 
-      - /sbin/apk add curl bash npm
+      - apk add curl bash npm
+      - touch ~/.bashrc
       - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.32.1/install.sh | bash
-      - export NVM_DIR="/root/.nvm" && . "$NVM_DIR/nvm.sh"
+      - . ~/.bashrc
       - nvm install 10
+      - npm config delete prefix
+      - npm config set prefix $NVM_DIR/versions/node/v10.15.3
       - npm install -g codecov
       - npm ci
 
