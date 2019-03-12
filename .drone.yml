@@ -6,7 +6,7 @@ steps:
 - name: build
   image: node:carbon-alpine
   commands:
-    - apk add git python2
+    - apk add git python2 make
     - npm install -g codecov
     - npm ci
 - name: test
@@ -26,7 +26,7 @@ steps:
 - name: build
   image: node:dubnium-alpine
   commands:
-    - apk add git python2
+    - apk add git python2 make
     - npm install -g codecov
     - npm ci
 - name: test
