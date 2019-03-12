@@ -6,7 +6,7 @@ steps:
 - name: sdk build
   image: node:carbon-alpine
   commands:
-    - apk add curl git
+    - apk add curl git python2
     - npm install -g codecov
     - npm ci
 - name: run sdk-test
@@ -31,7 +31,7 @@ steps:
 - name: sdk build
   image: node:dubnium-alpine
   commands:
-    - apk add curl git
+    - apk add curl git python2
     - npm install -g codecov
     - npm ci
 - name: run sdk-test
