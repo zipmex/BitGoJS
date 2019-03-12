@@ -3,45 +3,37 @@ kind: pipeline
 name: node-carbon
 
 steps:
-- name: sdk build
+- name: build
   image: node:carbon-alpine
   commands:
-    - apk add curl git python2
+    - apk add git python2
     - npm install -g codecov
     - npm ci
-- name: run sdk-test
+- name: test
   image: node:carbon-alpine
   commands:
     - npm run test-travis
-    - npm run test-node
-  depends_on:
-    - sdk build
-- name: run coverage
+- name: coverage
   image: node:carbon-alpine
   commands:
     - npm run coverage
-  depends_on:
-    - sdk build
 
 ---
 kind: pipeline
 name: node-dubnium
 
 steps:
-- name: sdk build
+- name: build
   image: node:dubnium-alpine
   commands:
-    - apk add curl git python2
+    - apk add git python2
     - npm install -g codecov
     - npm ci
-- name: run sdk-test
+- name: test
   image: node:dubnium-alpine
   commands:
     - npm run test-travis
-    - npm run test-node
-  depends_on:
-    - sdk build
-- name: run coverage
+- name: coverage
   image: node:dubnium-alpine
   commands:
     - npm run coverage
