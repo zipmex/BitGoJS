@@ -2,9 +2,10 @@ pipeline:
   Node.js 10:
     image: ubuntu:latest
     commands: 
-      - apt update && apt upgrade -y
-      - apt install dialog -y
-      - apt install wget -y
+      - apt-get update
+      - apt-get upgrade -y
+      - apt-get install dialog -y
+      - apt-get install wget -y
       - wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
       - . ~/.bashrc
       - nvm install 10
