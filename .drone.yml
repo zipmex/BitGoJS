@@ -2,6 +2,7 @@ pipeline:
   Node.js 10:
     image: ubuntu:latest
     commands: 
+      - bash
       - apt-get update
       - apt-get upgrade -y
       - apt-get install dialog -y
