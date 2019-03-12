@@ -6,10 +6,10 @@ pipeline:
       - apt-get upgrade -y
       - apt-get install dialog -y
       - apt-get install wget -y
+      - apt-get install npm -y
+      - apt-get install nodejs -y
       - wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
-      - export NVM_DIR="$HOME/.nvm"
-      - \. "$NVM_DIR/nvm.sh"
-      - \. "$NVM_DIR/bash_completion"
+      - source ~/.profile
       - nvm install 10
       - npm install -g codecov
       - npm ci
