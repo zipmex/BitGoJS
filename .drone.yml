@@ -1,41 +1,20 @@
----
-kind: pipeline
-name: node-carbon
+pipeline:
+  sdk build:
+    image: node:10.15.3
+    commands: 
+      - nvm install 10
+      - npm install -g codecov
+      - npm ci
 
-steps:
-- name: build
-  image: node:carbon-alpine
-  commands:
-    - apk add git python2 make
-    - npm install -g codecov
-    - npm ci
-- name: test
-  image: node:carbon-alpine
-  commands:
-    - npm run test-travis
-- name: coverage
-  image: node:carbon-alpine
-  commands:
-    - npm run coverage
+  sdk run sdk-test:
+    group: test
+    image: node:10.15.3
+    commands: 
+      - npm run test-travis
+      - npm run test-node
 
----
-kind: pipeline
-name: node-dubnium
-
-steps:
-- name: build
-  image: node:dubnium-alpine
-  commands:
-    - apk add git python2 make
-    - npm install -g codecov
-    - npm ci
-- name: test
-  image: node:dubnium-alpine
-  commands:
-    - npm run test-travis
-- name: coverage
-  image: node:dubnium-alpine
-  commands:
-    - npm run coverage
-
-
+  sdk run coverage:
+    group: test
+    image: node:10.15.3
+    commands: 
+      - npm run coverage
