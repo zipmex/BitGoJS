@@ -10,16 +10,18 @@ steps:
     - npm install -g codecov
     - npm ci
 - name: run sdk-test
-  image: node:carbon
+  image: node:carbon-alpine
   commands:
     - npm run test-travis
     - npm run test-node
   depends_on:
     - sdk build
 - name: run coverage
-  image: node:${NODE_VERSION}
+  image: node:carbon-alpine
   commands:
     - npm run coverage
+  depends_on:
+    - sdk build
 
 ---
 kind: pipeline
@@ -33,14 +35,14 @@ steps:
     - npm install -g codecov
     - npm ci
 - name: run sdk-test
-  image: node:carbon
+  image: node:dubnium-alpine
   commands:
     - npm run test-travis
     - npm run test-node
   depends_on:
     - sdk build
 - name: run coverage
-  image: node:${NODE_VERSION}
+  image: node:dubnium-alpine
   commands:
     - npm run coverage
 
