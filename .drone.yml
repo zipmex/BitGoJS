@@ -8,7 +8,7 @@ pipeline:
       - apt-get install wget -y
       - apt-get install npm -y
       - apt-get install nodejs -y
-      - wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash && . /root/.nvm/nvm.sh && nvm install 10
+      - wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash && . /root/.nvm/nvm.sh && nvm install 10 && nvm install lts/carbon
       - npm install -g codecov
       - npm ci
       - npm run test-travis
