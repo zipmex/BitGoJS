@@ -4,7 +4,7 @@ name: node-carbon
 
 steps:
 - name: sdk build
-  image: node:carbon
+  image: node:carbon-alpine
   commands:
     - apk add curl
     - npm install -g codecov
@@ -27,7 +27,7 @@ name: node-dubnium
 
 steps:
 - name: sdk build
-  image: node:carbon
+  image: node:dubnium-alpine
   commands:
     - apk add curl
     - npm install -g codecov
