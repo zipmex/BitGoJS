@@ -1,6 +1,6 @@
 pipeline:
   Node.js 10:
-    image: ubuntu:18.04
+    image: ubuntu:18.10
     commands: 
       - apt-get update
       - apt-get upgrade -y
