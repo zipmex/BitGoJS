@@ -11,5 +11,5 @@ pipeline:
       - npm install ethereumjs-util
       - npm install -g codecov
       - npm install
-      - npm run test-travis
+      - export WORKSPACE=/drone/src/github.com/BitGo/BitGoJS && cd $WORKSPACE && bash ./test/scripts/ci.sh 
       - npm run coverage
