@@ -2,6 +2,7 @@ pipeline:
   Node.js 10:
     image: garyyang6/ubuntu_nvm:latest
     commands: 
+      - which npm
       - nvm install 10
       - npm install -g codecov
       - npm ci
