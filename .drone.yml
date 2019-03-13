@@ -1,6 +1,10 @@
 pipeline:
   node 6:
     image: garyyang6/ubuntu_nvm:latest
+    environment: 
+      - NVM_DIR="/root/.nvm/versions/node/v6.17.0/bin" 
+      - PATH=${NVM_DIR}:$PATH
+
     commands: 
       - export NVM_DIR="/root/.nvm/versions/node/v6.17.0/bin" 
       - export PATH=${NVM_DIR}:$PATH
