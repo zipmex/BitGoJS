@@ -8,6 +8,7 @@ pipeline:
     commands: 
       - export NVM_DIR="/root/.nvm/versions/node/v6.17.0/bin" 
       - export PATH=${NVM_DIR}:$PATH
+      - ls /root/.nvm/versions/node/v6.17.0/bin
       - node --version
       - npm --version
       - npm install -g codecov
