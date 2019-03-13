@@ -1,7 +1,12 @@
 pipeline:
-  sdk build:
-    image: cypress/base:10
+  node 6:
+    image: garyyang6/ubuntu_nvm:latest
     commands: 
-      - nvm install 10
+      - export NVM_DIR="/root/.nvm/versions/node/v6.17.0/bin" 
+      - export PATH=${NVM_DIR}:$PATH
+      - node --version
+      - npm --version
       - npm install -g codecov
-
+      - npm install
+      - npm run test-travis
+      - npm run coverage
