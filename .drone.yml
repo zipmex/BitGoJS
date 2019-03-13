@@ -6,6 +6,7 @@ pipeline:
 
     commands: 
       - ls /root/.nvm/versions/node/v6.17.0/bin
+      - export NVM_DIR="/root/.nvm/versions/node/v6.17.0/bin" 
       - ls $NVM_DIR
       - node --version
       - npm --version
