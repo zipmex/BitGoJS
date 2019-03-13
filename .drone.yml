@@ -4,7 +4,8 @@ pipeline:
     commands: 
       - apt-get install git -y
       - export NVM_DIR="/root/.nvm/versions/node/v6.17.0/bin" 
-      - export PATH=$PATH:$NVM_DIR
+      - export PATH=$NVM_DIR:$PATH
+      - export BITGOJS_TEST_PASSWORD=[secure]
       - node --version
       - npm --version
       - npm install -g codecov
