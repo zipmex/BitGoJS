@@ -12,3 +12,15 @@ pipeline:
       - npm install -g codecov
       - npm install
       - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
+  node 9:
+    image: garyyang6/ubuntu_nvm:latest
+    commands: 
+      - export NVM_DIR="/root/.nvm/versions/node/v9.11.2/bin" 
+      - export PATH=$NVM_DIR:$PATH
+      - export BITGOJS_TEST_PASSWORD=[secure]
+      - node --version
+      - npm --version
+      - npm install ethereumjs-util
+      - npm install -g codecov
+      - npm install
+      - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
