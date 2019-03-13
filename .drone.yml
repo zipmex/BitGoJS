@@ -1,9 +1,18 @@
 pipeline:
-  Node.js 10:
-    image: ubuntu:latest
+  build:
+    image: node:6.12.3
     commands: 
-      - which npm
-      - nvm install 10
+      - nvm install 6
       - npm install -g codecov
-      - npm ci
+
+  sdk-test:
+    group: test
+    image: node:6.12.3
+    commands: 
       - npm run test-travis
+
+  coverage:
+    group: test
+    image: node:6.12.3
+    commands: 
+      - npm run coverage
