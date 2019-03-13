@@ -7,6 +7,6 @@ pipeline:
       - apt-get install curl bash -y
       - cat ~/.bashrc
       - ls ~/.nvm/versions/node
-      - nvm install 6
+      - . ~/.nvm/nvm.sh && nvm install 6
       - npm install -g codecov
 
