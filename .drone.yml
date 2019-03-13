@@ -8,6 +8,7 @@ pipeline:
       - export BITGOJS_TEST_PASSWORD=[secure]
       - node --version
       - npm --version
+      - npm install ethereumjs-util
       - npm install -g codecov
       - npm install
       - npm run test-travis
