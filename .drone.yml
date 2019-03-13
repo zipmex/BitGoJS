@@ -1,6 +1,6 @@
 pipeline:
   Node.js 10:
-    image: garyyang6/ubuntu_nvm
+    image: garyyang6/ubuntu_nvm:latest
     commands: 
       - nvm install 10
       - npm install -g codecov
