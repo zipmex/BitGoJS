@@ -1,18 +1,10 @@
 pipeline:
-  build:
+  sdk build:
     image: node:6.12.3
     commands: 
+      - apk add curl bash
+      - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.32.1/install.sh | bash
+      - exec bash
       - nvm install 6
       - npm install -g codecov
 
-  sdk-test:
-    group: test
-    image: node:6.12.3
-    commands: 
-      - npm run test-travis
-
-  coverage:
-    group: test
-    image: node:6.12.3
-    commands: 
-      - npm run coverage
