@@ -1,9 +1,9 @@
 pipeline:
-  node 6:
+  node 8:
     image: garyyang6/ubuntu_nvm:latest
     commands: 
       - apt-get install git python make g++ -y
-      - export NVM_DIR="/root/.nvm/versions/node/v6.17.0/bin" 
+      - export NVM_DIR="/root/.nvm/versions/node/v8.15.1/bin" 
       - export PATH=$NVM_DIR:$PATH
       - export BITGOJS_TEST_PASSWORD=[secure]
       - node --version
@@ -11,4 +11,4 @@ pipeline:
       - npm install ethereumjs-util
       - npm install -g codecov
       - npm install
-      - export WORKSPACE=/drone/src/github.com/BitGo/BitGoJS && cd $WORKSPACE && bash ./test/scripts/ci.sh 
+      - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
