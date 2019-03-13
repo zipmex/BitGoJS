@@ -1,13 +1,7 @@
 pipeline:
   sdk build:
-    image: garyyang6/ubuntu_nvm:latest
+    image: cypress/base:10
     commands: 
-      - apt-get update
-      - apt-get upgrade -y
-      - apt-get install curl bash -y
-      - cat ~/.bashrc
-      - ls ~/.nvm/versions/node
-      - source ~/.bashrc
-      - nvm install 6
+      - nvm install 10
       - npm install -g codecov
 
