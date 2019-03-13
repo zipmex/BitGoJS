@@ -5,8 +5,6 @@ pipeline:
       - apt-get update
       - apt-get upgrade -y
       - apt-get install curl bash -y
-      - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.32.1/install.sh | bash
-      - exec bash
       - nvm install 6
       - npm install -g codecov
 
