@@ -1,6 +1,6 @@
 pipeline:
   node 8:
-    image: garyyang6/ubuntu_nvm:latest
+    image: garyyang6/ubuntu_nvm:18.10
     commands: 
       - apt-get install git python make g++ -y
       - export NVM_DIR="/root/.nvm/versions/node/v8.15.1/bin" 
@@ -13,7 +13,7 @@ pipeline:
       - npm install
       - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
   node 9:
-    image: garyyang6/ubuntu_nvm:latest
+    image: garyyang6/ubuntu_nvm:18.10
     commands: 
       - export NVM_DIR="/root/.nvm/versions/node/v9.11.2/bin" 
       - export PATH=$NVM_DIR:$PATH
