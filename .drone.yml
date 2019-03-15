@@ -1,7 +1,13 @@
-pipeline:
-   node 9:
+---
+kind: pipeline
+name: node 9
+
+secrets: 
+   - password
+
+steps:
+    - name: build 9
       image: bitgosdk/ubuntu_nvm:18.10
-      group: parallel
       secrets: 
          - password
       commands: 
@@ -13,9 +19,12 @@ pipeline:
          - npm install -g codecov
          - npm install
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
-   node 10:
+---
+kind: pipeline
+name: node 10
+steps:
+    - name: build 10
       image: bitgosdk/ubuntu_nvm:18.10
-      group: parallel
       secrets:
          - password
       commands: 
@@ -28,9 +37,12 @@ pipeline:
          - npm install -g codecov
          - npm install
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
-   node 11:
+---
+kind: pipeline
+name: node 11
+steps:
+    - name: build 11
       image: bitgosdk/ubuntu_nvm:18.10
-      group: parallel
       secrets:
          - password
       commands: 
