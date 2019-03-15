@@ -2,7 +2,7 @@
 kind: pipeline
 name: node 9
 steps:
-    - name: build
+    - name: build 9
       image: bitgosdk/ubuntu_nvm:18.10
       secrets: 
          - password
@@ -19,7 +19,7 @@ steps:
 kind: pipeline
 name: node 10
 steps:
-    - name: build
+    - name: build 10
       image: bitgosdk/ubuntu_nvm:18.10
       secrets:
          - password
@@ -37,7 +37,7 @@ steps:
 kind: pipeline
 name: node 11
 steps:
-    - name: build
+    - name: build 11
       image: bitgosdk/ubuntu_nvm:18.10
       secrets:
          - password
