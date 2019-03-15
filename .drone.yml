@@ -1,6 +1,6 @@
 pipeline:
    node 9:
-      image: garyyang6/ubuntu_nvm:18.10
+      image: bitgosdk/ubuntu_nvm:18.10
       secrets: 
          - password
       commands: 
@@ -13,7 +13,7 @@ pipeline:
          - npm install
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
    node 10:
-      image: garyyang6/ubuntu_nvm:18.10
+      image: bitgosdk/ubuntu_nvm:18.10
       secrets:
          - password
       commands: 
@@ -27,7 +27,7 @@ pipeline:
          - npm install
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
    node 11:
-      image: garyyang6/ubuntu_nvm:18.10
+      image: bitgosdk/ubuntu_nvm:18.10
       secrets:
          - password
       commands: 
