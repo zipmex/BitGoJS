@@ -1,13 +1,8 @@
----
-kind: pipeline
-name: node 9
-
-secrets: 
-   - password
-
-steps:
-    - name: build 9
+pipeline:
+   node 9:
       image: bitgosdk/ubuntu_nvm:18.10
+      secrets: 
+         - password
       commands: 
          - export NVM_DIR="/root/.nvm/versions/node/v9.11.2/bin" 
          - export PATH=$NVM_DIR:$PATH
@@ -17,14 +12,10 @@ steps:
          - npm install -g codecov
          - npm install
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
-      secrets: 
-         - password
----
-kind: pipeline
-name: node 10
-steps:
-    - name: build 10
+   node 10:
       image: bitgosdk/ubuntu_nvm:18.10
+      secrets:
+         - password
       commands: 
          - export NVM_DIR="/root/.nvm/versions/node/v10.15.3/bin" 
          - export PATH=$NVM_DIR:$PATH
@@ -35,14 +26,10 @@ steps:
          - npm install -g codecov
          - npm install
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
+   node 11:
+      image: bitgosdk/ubuntu_nvm:18.10
       secrets:
          - password
----
-kind: pipeline
-name: node 11
-steps:
-    - name: build 11
-      image: bitgosdk/ubuntu_nvm:18.10
       commands: 
          - export NVM_DIR="/root/.nvm/versions/node/v11.11.0/bin" 
          - export PATH=$NVM_DIR:$PATH
@@ -53,5 +40,3 @@ steps:
          - npm install -g codecov
          - npm install
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh 
-      secrets:
-         - password
