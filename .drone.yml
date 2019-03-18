@@ -12,6 +12,7 @@ steps:
         - password
      commands:
         - export BITGOJS_TEST_PASSWORD=$PASSWORD
+        - node --version
         - npm --version
         - npm install -g codecov
         - npm instaLL
@@ -28,6 +29,7 @@ steps:
         - password
      commands:
         - export BITGOJS_TEST_PASSWORD=$PASSWORD
+        - node --version
         - npm --version
         - npm install -g codecov
         - npm install
