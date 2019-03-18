@@ -37,7 +37,7 @@ pipeline:
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh
 
    node 9:
-      image: node:9.11.0
+      image: node:9.10.1
       secrets:
          - password
       commands:
