@@ -45,6 +45,6 @@ pipeline:
          - node --version
          - npm --version
          - npm install -g codecov
-         - npm install
+         - npm ci
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh
 
