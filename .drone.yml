@@ -10,10 +10,8 @@ steps:
      image: node:8.15.1
      secrets:
         - password
-     environment:
-        - BITGOJS_TEST_PASSWORD=$PASSWORD
      commands:
-        - export BITGOJS_TEST_PASSWORD=$PASSWORD
+        - export BITGOJS_TEST_PASSWORD=$$PASSWORD
         - node --version
         - npm --version
         - npm install -g codecov
@@ -31,10 +29,8 @@ steps:
      image: node:11.12.0
      secrets:
         - password
-     environment:
-        - BITGOJS_TEST_PASSWORD=$PASSWORD
      commands:
-        - export BITGOJS_TEST_PASSWORD=$PASSWORD
+        - export BITGOJS_TEST_PASSWORD=$$PASSWORD
         - node --version
         - npm --version
         - npm install -g codecov
