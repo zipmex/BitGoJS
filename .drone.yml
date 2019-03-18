@@ -1,39 +1,46 @@
----
-kind: pipeline
-name: NODE8
-
-secrets:
-   - password
-
-steps:
-   - name: node 8.15.1
-     image: node:8.15.1
-     secrets:
-        - password
-     commands:
-        - export BITGOJS_TEST_PASSWORD=$$PASSWORD
-        - node --version
-        - npm --version
-        - npm install -g codecov
-        - npm install
-        - npm run test-travis
----
-kind: pipeline
-name: NODE11
-
-secrets:
-   - password
-
-steps:
-   - name: node 11.12.0
-     image: node:11.12.0
-     secrets:
-        - password
-     commands:
-        - export BITGOJS_TEST_PASSWORD=$$PASSWORD
-        - node --version
-        - npm --version
-        - npm install -g codecov
-        - npm instaLL
-        - npm run test-travis
+pipeline:
+   node 8:
+      image: node:8.15.1
+      secrets:
+         - password
+      commands:
+         - export BITGOJS_TEST_PASSWORD=$PASSWORD
+         - node --version
+         - npm install ethereumjs-util
+         - npm install -g codecov
+         - npm install
+         - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh
+   node 9:
+      image: node:9.11.2
+      secrets:
+         - password
+      commands:
+         - export BITGOJS_TEST_PASSWORD=$PASSWORD
+         - node --version
+         - npm install ethereumjs-util
+         - npm install -g codecov
+         - npm install
+         - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh
+   node 10:
+      image: node:10.15.3
+      secrets:
+         - password
+      commands:
+         - export BITGOJS_TEST_PASSWORD=$PASSWORD
+         - node --version
+         - npm install ethereumjs-util
+         - npm install -g codecov
+         - npm install
+         - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh
+   node 11:
+      image: node:11.11.0
+      secrets:
+         - password
+      commands:
+         - export BITGOJS_TEST_PASSWORD=$PASSWORD
+         - node --version
+         - npm install ethereumjs-util
+         - npm install -g codecov
+         - npm install
+         - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh
 
