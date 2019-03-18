@@ -33,3 +33,14 @@ pipeline:
          - npm install
          - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh
 
+   node 9:
+      image: node:9.11.2
+      secrets:
+         - password
+      commands:
+         - export BITGOJS_TEST_PASSWORD=$PASSWORD
+         - node --version
+         - npm install -g codecov
+         - npm install
+         - export WORKSPACE=/drone/src && cd $WORKSPACE && bash ./test/scripts/ci.sh
+
