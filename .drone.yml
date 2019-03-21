@@ -38,10 +38,15 @@ steps:
   - node --version
   - npm --version
 
+- name: install
+  image: node:lts
+  commands:
+  - npm install
+
 - name: lint
   image: node:lts
   commands:
-  - "npx eslint 'src/**/*.js'"
+  - "npx eslint 'src/**/*.ts'"
 
 ---
 kind: pipeline
@@ -244,7 +249,7 @@ steps:
 - name: integration tests
   image: node:10
   commands:
-  - npx nyc -- node_modules/.bin/mocha --timeout 20000 --reporter list --exit --recursive test/v2/integration
+  - "npx nyc -- node_modules/.bin/mocha -r ts-node/register --timeout 20000 --reporter list --exit 'test/v2/integration/**/*.ts'"
   environment:
     BITGOJS_TEST_PASSWORD:
       from_secret: password
