@@ -111,6 +111,7 @@ local IntegrationTest(version, limit_branches=true) = {
       },
     ],
   },
+  UnitTest("6"),
   UnitTest("8"),
   UnitTest("9"),
   UnitTest("10"),

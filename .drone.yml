@@ -51,6 +51,48 @@ steps:
 
 ---
 kind: pipeline
+name: unit tests (node:6)
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build information
+  image: node:6
+  commands:
+  - node --version
+  - npm --version
+
+- name: install
+  image: node:6
+  commands:
+  - npm install
+
+- name: unit tests
+  image: node:6
+  commands:
+  - npm run test-node
+  environment:
+    BITGOJS_TEST_PASSWORD:
+      from_secret: password
+
+- name: upload coverage
+  image: node:6
+  commands:
+  - "npx nyc report --reporter=text-lcov > coverage.lcov"
+  - "npx codecov -f coverage.lcov -t \"$CODECOV_TOKEN\" -F unit"
+  environment:
+    CODECOV_TOKEN:
+      from_secret: codecov
+  when:
+    branch:
+    - master
+    - "rel/*"
+    - prod/production
+
+---
+kind: pipeline
 name: unit tests (node:8)
 
 platform:
