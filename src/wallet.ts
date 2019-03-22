@@ -11,7 +11,6 @@ import bitcoin = require('./bitcoin');
 import prova = require('prova-lib');
 const PendingApproval = require('./pendingapproval');
 
-import { strict as assert } from 'assert';
 import common = require('./common');
 const config = require('./config');
 import * as Promise from 'bluebird';
@@ -1803,8 +1802,9 @@ Wallet.prototype.fanOutUnspents = function(params, callback) {
       _.fill(almostEqualParts, partSize, remainder);
       // assert the correctness of the almost equal parts
       // TODO: add check for the biggest deviation between any two parts and make sure it's <= 1
-      assert.equal(_(almostEqualParts).sum(), total);
-      assert.equal(_(almostEqualParts).size(), partCount);
+      if (_(almostEqualParts).sum() !== total || _(almostEqualParts).size() !== partCount) {
+        throw new Error('part sum or part count mismatch');
+      }
       return almostEqualParts;
     };
 

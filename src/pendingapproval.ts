@@ -5,7 +5,6 @@
 // Copyright 2015, BitGo, Inc.  All Rights Reserved.
 //
 import common = require('./common');
-import assert = require('assert');
 
 import bitcoin = require('./bitcoin');
 
@@ -87,7 +86,9 @@ PendingApproval.prototype.creator = function() {
 // Example: transactionRequest, tagUpdateRequest, policyRuleRequest
 //
 PendingApproval.prototype.type = function() {
-  assert(this.pendingApproval.info);
+  if (!this.pendingApproval.info) {
+    throw new Error('pending approval info is not available');
+  }
   return this.pendingApproval.info.type;
 };
 

@@ -1,5 +1,4 @@
 import common = require('../common');
-import { strict as assert } from 'assert';
 import * as Promise from 'bluebird';
 const co = Promise.coroutine;
 import * as _ from 'lodash';
@@ -77,7 +76,10 @@ PendingApproval.prototype.creator = function() {
 // Example: transactionRequest, tagUpdateRequest, policyRuleRequest
 //
 PendingApproval.prototype.type = function() {
-  assert(this._pendingApproval.info);
+  if (!this._pendingApproval.info) {
+    throw new Error('pending approval info is not available');
+  }
+
   return this._pendingApproval.info.type;
 };
 
@@ -258,7 +260,9 @@ PendingApproval.prototype.recreateAndSignTransaction = function(params) {
 
     // this method only makes sense with existing transaction requests
     const transactionRequest = this.info().transactionRequest;
-    assert(transactionRequest);
+    if (!transactionRequest) {
+      throw new Error('cannot recreate transaction without transaction request');
+    }
 
     const originalPrebuild = transactionRequest.coinSpecific[this.baseCoin.type];
 

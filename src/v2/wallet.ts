@@ -1,5 +1,4 @@
 import common = require('../common');
-import { strict as assert } from 'assert';
 const BigNumber = require('bignumber.js');
 const bitcoin = require('../bitcoin');
 const PendingApproval = require('./pendingApproval');
@@ -763,8 +762,13 @@ Wallet.prototype.simulateWebhook = function(params, callback) {
 
   const hasTransferId = !!params.transferId;
   const hasPendingApprovalId = !!params.pendingApprovalId;
-  assert(hasTransferId || hasPendingApprovalId, 'must supply either transferId or pendingApprovalId');
-  assert(hasTransferId !== hasPendingApprovalId, 'must supply either transferId or pendingApprovalId, but not both');
+  if (!hasTransferId && !hasPendingApprovalId) {
+    throw new Error('must supply either transferId or pendingApprovalId');
+  }
+
+  if (hasTransferId && hasPendingApprovalId) {
+    throw new Error('must supply either transferId or pendingApprovalId, but not both');
+  }
 
   // depending on the coin type of the wallet, the txHash has to adhere to its respective format
   // but the server takes care of that
@@ -1233,13 +1237,12 @@ Wallet.prototype.send = function(params, callback) {
   common.validateParams(params, ['address'], ['message', 'data'], callback);
   const coin = this.baseCoin;
 
-  try {
-    const amount = new BigNumber(params.amount);
-    assert(!amount.isNegative());
-    if (!coin.valuelessTransferAllowed()) {
-      assert(!amount.isZero());
-    }
-  } catch (e) {
+  const amount = new BigNumber(params.amount);
+  if (amount.isNegative()) {
+    throw new Error('invalid argument for amount - positive number greater than zero or numeric string expected');
+  }
+
+  if (!coin.valuelessTransferAllowed() && amount.isZero()) {
     throw new Error('invalid argument for amount - positive number greater than zero or numeric string expected');
   }
 
@@ -1297,13 +1300,11 @@ Wallet.prototype.sendMany = function(params, callback) {
     const coin = this.baseCoin;
     if (_.isObject(params.recipients)) {
       params.recipients.map(function(recipient) {
-        try {
-          const amount = new BigNumber(recipient.amount);
-          assert(!amount.isNegative());
-          if (!coin.valuelessTransferAllowed()) {
-            assert(!amount.isZero());
-          }
-        } catch (e) {
+        const amount = new BigNumber(recipient.amount);
+        if (amount.isNegative()) {
+          throw new Error('invalid argument for amount - positive number greater than zero or numeric string expected');
+        }
+        if (!coin.valuelessTransferAllowed() && amount.isZero()) {
           throw new Error('invalid argument for amount - positive number greater than zero or numeric string expected');
         }
       });
