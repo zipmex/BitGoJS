@@ -106,6 +106,7 @@ local IntegrationTest(version, limit_branches=true) = {
         image: "node:lts",
         commands: [
           "npx eslint 'src/**/*.ts'",
+          "npx eslint 'test/**/*.ts' || true"
         ],
       },
     ],

@@ -47,6 +47,7 @@ steps:
   image: node:lts
   commands:
   - "npx eslint 'src/**/*.ts'"
+  - "npx eslint 'test/**/*.ts' || true"
 
 ---
 kind: pipeline
