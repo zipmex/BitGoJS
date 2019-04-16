@@ -5,9 +5,10 @@
 // Copyright 2014, BitGo, Inc.  All Rights Reserved.
 //
 
-import bitcoin = require('./bitcoin');
-import common = require('./common');
 import * as _ from 'lodash';
+
+const bitcoin = require('./bitcoin');
+const common = require('./common');
 
 //
 // Constructor

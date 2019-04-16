@@ -3,7 +3,7 @@
 //
 // Copyright 2014, BitGo, Inc.  All Rights Reserved.
 //
-import common = require('./common');
+const common = require('./common');
 const bitgo: any = {};
 bitgo.BitGo = require('./bitgo');
 

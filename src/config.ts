@@ -1,5 +1,6 @@
-import common = require('./common');
 import * as _ from 'lodash';
+
+const common = require('./common');
 
 export const tokens = {
   // network name for production environments (prod tokens must be added here)

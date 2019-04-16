@@ -1,9 +1,11 @@
-import common = require('./common');
 const bitcoin = require('bitgo-utxo-lib');
 const ecurve = require('ecurve');
-const curve = ecurve.getCurveByName('secp256k1');
 const BigInteger = require('bigi');
 const createHmac = require('create-hmac');
+
+const common = require('./common');
+
+const curve = ecurve.getCurveByName('secp256k1');
 const HDNode = bitcoin.HDNode;
 
 let secp256k1;

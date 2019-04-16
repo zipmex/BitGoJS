@@ -1,17 +1,18 @@
-import bodyParser = require('body-parser');
+import * as url from 'url';
+import * as _ from 'lodash';
+
+const bodyParser = require('body-parser');
+const Promise = require('bluebird'); // not converting to ES6 import yet due to incorrectly typed usage of Promise.try
+const debug = require('debug')('bitgo:express');
 
 const BitGoJS = require('./index');
 const TransactionBuilder = require('./transactionBuilder');
 const common = require('./common');
-const Promise = require('bluebird');
-const co = Promise.coroutine;
-const url = require('url');
-const _ = require('lodash');
 const pjson = require('../package.json');
-const debug = require('debug')('bitgo:express');
 const util = require('./util');
 const errors = require('./errors');
 
+const co = Promise.coroutine;
 const BITGOEXPRESS_USER_AGENT = 'BitGoExpress/' + pjson.version;
 
 const handlePing = function(req) {

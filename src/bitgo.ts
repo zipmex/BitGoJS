@@ -4,41 +4,49 @@
 // Copyright 2014, BitGo, Inc.  All Rights Reserved.
 //
 
+// use import .. from .. where we have an @types package for an external dependency,
+// unless they have a default export or non-object export, in which case
+// import .. = require(..) should be used instead for CommonJS compatibility
+import * as bluebird from 'bluebird';
+import * as moment from 'moment';
+import * as _ from 'lodash';
+import * as url from 'url';
+import * as querystring from 'querystring';
+import * as crypto from 'crypto';
+
+// use const .. = require(..) when we don't have types for an external package
 const superagent = require('superagent');
-import bitcoin = require('./bitcoin');
-import bitcoinMessage = require('bitcoinjs-message');
-import sanitizeHtml = require('sanitize-html');
-import eol = require('eol');
+const bitcoinMessage = require('bitcoinjs-message');
+const sanitizeHtml = require('sanitize-html');
+const eol = require('eol');
+const shamir = require('secrets.js-grempe');
+const bs58 = require('bs58');
+const debugLib = require('debug');
+
+// internal deps, use const .. = require(..) until we have better type information across the project.
+// import .. as .. syntax is acceptable for files which have sufficient type information.
+const bitcoin = require('./bitcoin');
 const BaseCoin = require('./v2/baseCoin');
 const Blockchain = require('./blockchain');
 const EthBlockchain = require('./eth/ethBlockchain');
 const Keychains = require('./keychains');
 const TravelRule = require('./travelRule');
-import Wallet = require('./wallet');
-import EthWallet = require('./eth/ethWallet');
+const Wallet = require('./wallet');
+const EthWallet = require('./eth/ethWallet');
 const Wallets = require('./wallets');
 const EthWallets = require('./eth/ethWallets');
 const Markets = require('./markets');
 const PendingApprovals = require('./pendingapprovals');
-import shamir = require('secrets.js-grempe');
-import sjcl = require('./vendor/sjcl.min.js');
-import bs58 = require('bs58');
-import common = require('./common');
-import Util = require('./util');
-import Promise = require('bluebird');
-import co = Promise.coroutine;
-import pjson = require('../package.json');
-import moment = require('moment');
-import * as _ from 'lodash';
-import url = require('url');
-import querystring = require('querystring');
-import config = require('./config');
-import crypto = require('crypto');
-import debugLib = require('debug');
+const common = require('./common');
+const Util = require('./util');
+const sjcl = require('./vendor/sjcl.min.js');
+const pjson = require('../package.json');
+const config = require('./config');
 const internal = require('./v2/internal');
 
 const debug = debugLib('bitgo:index');
 const { bytesToWord } = internal;
+const co = bluebird.coroutine;
 
 if (!(process as any).browser) {
   require('superagent-proxy')(superagent);
@@ -52,7 +60,7 @@ superagent.Request.prototype.end = function(cb) {
     return _end.call(self, cb);
   }
 
-  return new Promise.Promise(function(resolve, reject) {
+  return new bluebird.Promise(function(resolve, reject) {
     let error;
     try {
       return _end.call(self, function(error, response) {
@@ -235,7 +243,7 @@ const BitGo = function(params) {
   this._token = params.accessToken || null;
   this._refreshToken = params.refreshToken || null;
   this._userAgent = params.userAgent || 'BitGoJS/' + this.version();
-  this._promise = Promise;
+  this._promise = bluebird.Promise;
 
   // whether to perform extra client-side validation for some things, such as
   // address validation or signature validation. defaults to true, but can be
@@ -546,7 +554,7 @@ BitGo.prototype.clear = function() {
 
 // Helper function to return a rejected promise or call callback with error
 BitGo.prototype.reject = function(msg, callback) {
-  return Promise.reject(new Error(msg)).nodeify(callback);
+  return bluebird.reject(new Error(msg)).nodeify(callback);
 };
 
 //
@@ -1366,7 +1374,7 @@ BitGo.prototype.addAccessToken = function(params, callback) {
 
   const authUrl = this._microservicesUrl ? this.microservicesUrl('/api/v1/auth/accesstoken') : this.url('/user/accesstoken');
   const request = this.post(authUrl);
-  
+
   if (!bitgo._ecdhXprv) {
     // without a private key, the user cannot decrypt the new access token the server will send
     request.forceV1Auth = true;
@@ -1425,7 +1433,7 @@ BitGo.prototype.removeAccessToken = function(params, callback) {
 
   const self = this;
 
-  return Promise.try(function() {
+  return bluebird.try(function() {
     if (params.id) {
       return params.id;
     }

@@ -4,9 +4,7 @@
 //
 // Copyright 2015, BitGo, Inc.  All Rights Reserved.
 //
-
-
-import common = require('./common');
+const common = require('./common');
 
 //
 // Constructor

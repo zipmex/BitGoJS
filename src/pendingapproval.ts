@@ -4,12 +4,12 @@
 //
 // Copyright 2015, BitGo, Inc.  All Rights Reserved.
 //
-import common = require('./common');
 
-import bitcoin = require('./bitcoin');
-
-import Promise = require('bluebird');
+import * as bluebird from 'bluebird';
 import * as _ from 'lodash';
+
+const common = require('./common');
+const bitcoin = require('./bitcoin');
 
 //
 // Constructor
@@ -155,7 +155,7 @@ PendingApproval.prototype.populateWallet = function() {
     throw new Error('unexpected source wallet for pending approval');
   }
 
-  return Promise.resolve(); // otherwise returns undefined
+  return bluebird.resolve(); // otherwise returns undefined
 };
 
 //
@@ -176,7 +176,7 @@ PendingApproval.prototype.recreateAndSignTransaction = function(params, callback
 
   const self = this;
 
-  return Promise.try(function() {
+  return bluebird.try(function() {
     if (self.info().transactionRequest.recipients) {
       // recipients object found on the pending approvals - use it
       params.recipients = self.info().transactionRequest.recipients;
@@ -234,7 +234,7 @@ PendingApproval.prototype.constructApprovalTx = function(params, callback) {
   }
 
   const self = this;
-  return Promise.try(function() {
+  return bluebird.try(function() {
     if (self.type() === 'transactionRequest') {
       const extendParams: any = { txHex: self.info().transactionRequest.transaction };
       if (params.useOriginalFee) {
@@ -275,7 +275,7 @@ PendingApproval.prototype.approve = function(params, callback) {
   }
 
   const self = this;
-  return Promise.try(function() {
+  return bluebird.try(function() {
     if (self.type() === 'transactionRequest') {
       if (params.tx) {
         // the approval tx was reconstructed and explicitly specified - pass it through

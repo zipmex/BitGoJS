@@ -5,11 +5,14 @@
 // Copyright 2014, BitGo, Inc.  All Rights Reserved.
 //
 
+import * as _ from 'lodash';
+import * as bluebird from 'bluebird';
+
 import bitcoin = require('./bitcoin');
 const Wallet = require('./wallet');
 const common = require('./common');
-const _ = require('lodash');
-const co = require('bluebird').coroutine;
+
+const co = bluebird.coroutine;
 
 //
 // Constructor

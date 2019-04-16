@@ -1,4 +1,4 @@
-import common = require('./common');
+const common = require('./common');
 const prova = require('prova-lib');
 
 prova.getNetwork = function() {

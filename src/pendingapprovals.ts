@@ -5,9 +5,10 @@
 // Copyright 2015, BitGo, Inc.  All Rights Reserved.
 //
 
-import common = require('./common');
-const PendingApproval = require('./pendingapproval');
 import * as _ from 'lodash';
+
+const common = require('./common');
+const PendingApproval = require('./pendingapproval');
 
 //
 // Constructor

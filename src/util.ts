@@ -1,7 +1,8 @@
-import bitcoin = require('bitgo-utxo-lib');
+import * as _ from 'lodash';
+import * as crypto from 'crypto';
+
+const bitcoin = require('bitgo-utxo-lib');
 const Big = require('big.js');
-const _ = require('lodash');
-const crypto = require('crypto');
 
 const Util: any = {};
 let ethUtil;

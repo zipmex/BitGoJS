@@ -1,23 +1,24 @@
-import express = require('express');
-import httpProxy = require('http-proxy');
-import url = require('url');
+import * as url from 'url';
+import * as _ from 'lodash';
+import * as https from 'https';
+import * as http from 'http';
+import * as path from 'path';
+import * as bluebird from 'bluebird';
+import { SSL_OP_NO_TLSv1 } from 'constants'; /* eslint-disable-line @typescript-eslint/camelcase */
+
+const express = require('express');
+const httpProxy = require('http-proxy');
 const morgan = require('morgan');
-const Promise = require('bluebird');
-const fs = Promise.promisifyAll(require('fs'));
-const path = require('path');
-const _ = require('lodash');
+const fs = bluebird.promisifyAll(require('fs'));
 const debugLib = require('debug');
-const debug = debugLib('bitgo:express');
-const https = require('https');
-const http = require('http');
-const co = Promise.coroutine;
 const { ArgumentParser } = require('argparse');
-const { SSL_OP_NO_TLSv1 } = require('constants');
 
 const common = require('./common');
 const pjson = require('../package.json');
 const { TlsConfigurationError, NodeEnvironmentError } = require('./errors');
 
+const debug = debugLib('bitgo:express');
+const co = bluebird.coroutine;
 const BITGOEXPRESS_USER_AGENT = 'BitGoExpress/' + pjson.version;
 const DEFAULT_TIMEOUT = 305 * 1000;
 

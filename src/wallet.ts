@@ -5,19 +5,20 @@
 // Copyright 2014, BitGo, Inc.  All Rights Reserved.
 //
 
+import * as bluebird from 'bluebird';
+import * as _ from 'lodash';
 import { Codes, VirtualSizes } from '@bitgo/unspents';
 
-const TransactionBuilder = require('./transactionBuilder');
-import bitcoin = require('./bitcoin');
 // TODO: switch to bitcoinjs-lib eventually once we upgrade it to version 3.x.x
-import prova = require('prova-lib');
-const PendingApproval = require('./pendingapproval');
-
-import common = require('./common');
-import * as Promise from 'bluebird';
-const co = Promise.coroutine;
-import * as _ from 'lodash';
+const prova = require('prova-lib');
 const request = require('superagent');
+
+const PendingApproval = require('./pendingapproval');
+const TransactionBuilder = require('./transactionBuilder');
+const bitcoin = require('./bitcoin');
+const common = require('./common');
+
+const co = bluebird.coroutine;
 
 //
 // Constructor
@@ -185,7 +186,7 @@ Wallet.prototype.updateApprovalsRequired = function(params, callback) {
   const currentApprovalsRequired = this.approvalsRequired();
   if (currentApprovalsRequired === params.approvalsRequired) {
     // no-op, just return the current wallet
-    return Promise.try(function() {
+    return bluebird.try(function() {
       return self.wallet;
     })
     .nodeify(callback);
@@ -803,7 +804,7 @@ Wallet.prototype.pollForTransaction = function(params, callback) {
       if (err.status !== 404 || new Date().valueOf() - start.valueOf() > params.timeout) {
         throw err;
       }
-      return Promise.delay(params.delay)
+      return bluebird.delay(params.delay)
       .then(function() {
         return doNextPoll();
       });
@@ -1694,7 +1695,7 @@ Wallet.prototype.getAndPrepareSigningKeychain = function(params, callback) {
 
   // If keychain with xprv is already provided, use it
   if (_.isObject(params.keychain) && params.keychain.xprv) {
-    return Promise.resolve(params.keychain);
+    return bluebird.resolve(params.keychain);
   }
 
   common.validateParams(params, [], ['walletPassphrase', 'xprv'], callback);
@@ -1756,7 +1757,7 @@ Wallet.prototype.getAndPrepareSigningKeychain = function(params, callback) {
  */
 Wallet.prototype.fanOutUnspents = function(params, callback) {
   const self = this;
-  return Promise.coroutine(function *() {
+  return co(function *() {
     // maximum number of inputs for fanout transaction
     // (when fanning out, we take all the unspents and make a bigger number of outputs)
     const MAX_FANOUT_INPUT_COUNT = 80;
@@ -1837,7 +1838,7 @@ Wallet.prototype.fanOutUnspents = function(params, callback) {
     // create target amount of new addresses for this wallet
     const newAddressPromises = _.range(target)
     .map(() => self.createAddress({ chain: self.getChangeChain(params), validate: validate }));
-    const newAddresses = yield Promise.all(newAddressPromises);
+    const newAddresses = yield bluebird.all(newAddressPromises);
     // let's find a nice, equal distribution of our Satoshis among the new addresses
     const splitAmounts = splitNumberIntoCloseNaturalNumbers(grossAmount, target);
     // map the newly created addresses to the almost components amounts we just calculated
@@ -1888,7 +1889,7 @@ Wallet.prototype.fanOutUnspents = function(params, callback) {
       throw e;
     }
 
-    return Promise.resolve(fanoutTx).asCallback(callback);
+    return bluebird.resolve(fanoutTx).asCallback(callback);
   })().asCallback(callback);
 };
 
@@ -2134,7 +2135,7 @@ Wallet.prototype.consolidateUnspents = function(params, callback) {
       // this last consolidation has not yet brought the unspents count down to the target unspent count
       // therefore, we proceed by consolidating yet another batch
       // before we do that, we wait 1 second so that the newly created unspent will be fetched in the next batch
-      yield Promise.delay(1000);
+      yield bluebird.delay(1000);
       consolidationTransactions.push(...yield runNextConsolidation());
     }
     // this is the final consolidation transaction. We return all the ones we've had so far
