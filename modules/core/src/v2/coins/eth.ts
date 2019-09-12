@@ -40,60 +40,26 @@ const debug = debugLib('bitgo:v2:eth');
 
 // The following dependencies are optional. If they are missing we still want to be
 // able to require `eth.js` without error.
-let ethAbi: any = null;
-let ethUtil: any = null;
-let ethTx: any = null;
-
-import('ethereumjs-util')
-  .then(eth => {
-    ethUtil = eth;
-  })
-  .catch(e => {
-    // ethereum currently not supported
-    console.error('unable to load ethereumjs-util:');
-    console.error(e);
-  });
-
-import('ethereumjs-abi')
-  .then(eth => {
-    ethAbi = eth;
-  })
-  .catch(e => {
-    // ethereum currently not supported
-    console.error('unable to load ethereumjs-abi:');
-    console.error(e);
-  });
-
-import('ethereumjs-tx')
-  .then(eth => {
-    ethTx = eth;
-  })
-  .catch(e => {
-    // ethereum currently not supported
-    console.error('unable to load ethereumjs-tx:');
-    console.error(e);
-  });
-
 export const optionalDeps = {
-  get ethAbi() {
-    if (!ethAbi) {
-      throw new EthereumLibraryUnavailableError(`ethereumjs-abi`);
+  tryRequire(packageName) {
+    try {
+      return require(packageName);
+    } catch (e) {
+      console.error(e);
+      throw new EthereumLibraryUnavailableError(packageName);
     }
-    return ethAbi;
+  },
+
+  get ethAbi() {
+    return this.tryRequire('ethereumjs-abi');
   },
 
   get ethUtil() {
-    if (!ethUtil) {
-      throw new EthereumLibraryUnavailableError(`ethereumjs-util`);
-    }
-    return ethUtil;
+    return this.tryRequire('ethereumjs-util');
   },
 
   get EthTx() {
-    if (!ethTx) {
-      throw new EthereumLibraryUnavailableError(`ethereumjs-tx`);
-    }
-    return ethTx;
+    return this.tryRequire('ethereumjs-tx');
   },
 };
 
