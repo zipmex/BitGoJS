@@ -14,16 +14,14 @@ let ethUtil;
 let isEthAvailable = false;
 
 const ethImport = 'ethereumjs-util';
-import(ethImport)
-  .then(eth => {
-    ethUtil = eth;
-    isEthAvailable = true;
-  })
-  .catch(e => {
-    // ethereum currently not supported
-    console.error('unable to load ethereumjs-util:');
-    console.error(e.stack);
-  });
+try {
+  ethUtil = require(ethImport);
+  isEthAvailable = true;
+} catch (e) {
+  // ethereum currently not supported
+  console.error('unable to load ethereumjs-util:');
+  console.error(e.stack);
+}
 
 /**
  * Create a request tracer for tracing workflows which involve multiple round trips to the server
