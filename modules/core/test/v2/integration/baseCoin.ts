@@ -28,7 +28,7 @@ describe('V2 Base Coin:', function() {
       }));
     });
 
-    _.forEach(['teth', 'txrp'], function(coin) {
+    _.forEach(['teth'], function(coin) {
       const basecoin = bitgo.coin(coin);
 
       it('should fetch fee info for account coin', co(function *() {
