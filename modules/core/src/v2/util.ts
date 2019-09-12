@@ -21,8 +21,8 @@ import(ethImport)
   })
   .catch(e => {
     // ethereum currently not supported
-    debug('unable to load ethereumjs-util:');
-    debug(e.stack);
+    console.error('unable to load ethereumjs-util:');
+    console.error(e.stack);
   });
 
 /**

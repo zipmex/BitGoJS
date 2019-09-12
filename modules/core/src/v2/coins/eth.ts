@@ -50,8 +50,8 @@ import('ethereumjs-util')
   })
   .catch(e => {
     // ethereum currently not supported
-    debug('unable to load ethereumjs-util:');
-    debug(e.stack);
+    console.error('unable to load ethereumjs-util:');
+    console.error(e);
   });
 
 import('ethereumjs-abi')
@@ -60,8 +60,8 @@ import('ethereumjs-abi')
   })
   .catch(e => {
     // ethereum currently not supported
-    debug('unable to load ethereumjs-abi:');
-    debug(e.stack);
+    console.error('unable to load ethereumjs-abi:');
+    console.error(e);
   });
 
 import('ethereumjs-tx')
@@ -70,8 +70,8 @@ import('ethereumjs-tx')
   })
   .catch(e => {
     // ethereum currently not supported
-    debug('unable to load ethereumjs-tx:');
-    debug(e.stack);
+    console.error('unable to load ethereumjs-tx:');
+    console.error(e);
   });
 
 export const optionalDeps = {
