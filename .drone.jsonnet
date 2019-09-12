@@ -70,28 +70,17 @@ local ExcludeBranches(pipeline, excluded_branches=branches()) = pipeline + {
   },
 };
 
-local GenerateDocs(version) = {
-  name: "generate docs",
-  image: "bitgosdk/upload-tools:latest",
-  commands: [
-    "yarn run gen-docs",
-  ],
-  when: {
-    event: ["tag"]
-  }
-};
-
-local UploadArtifacts(version, tag="untagged", only_changed=false) = {
-  name: "upload artifacts",
-  image: "bitgosdk/upload-tools:latest",
+local UploadReports(version, tag="untagged", only_changed=false) = {
+  name: "upload reports",
+  image: "node:"  + version,
   environment: {
     CODECOV_TOKEN: { from_secret: "codecov" },
     reports_s3_akid: { from_secret: "reports_s3_akid" },
     reports_s3_sak: { from_secret: "reports_s3_sak" },
   },
   commands: [
+    "yarn add -s -W --ignore-engines --no-lockfile --ignore-scripts codecov aws-sdk",
     "yarn run artifacts",
-    "yarn run upload-docs",
     "yarn run gen-coverage" + (if only_changed then "-changed" else ""),
     "yarn run coverage -F " + tag,
   ],
@@ -107,8 +96,13 @@ local UnitTest(version) = {
     BuildInfo(version),
     Install(version),
     CommandWithSecrets("unit-test-changed", version),
-    UploadArtifacts(version, "unit", true),
+    UploadReports(version, "unit", true),
   ],
+  trigger: {
+    branch: {
+      exclude: branches(),
+    },
+  },
 };
 
 local IntegrationTest(version) = {
@@ -118,8 +112,7 @@ local IntegrationTest(version) = {
     BuildInfo(version),
     Install(version),
     CommandWithSecrets("integration-test", version),
-    GenerateDocs(version),
-    UploadArtifacts(version, "integration"),
+    UploadReports(version, "integration"),
   ],
 };
 

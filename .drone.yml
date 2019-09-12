@@ -88,11 +88,11 @@ steps:
     BITGOJS_TEST_PASSWORD:
       from_secret: password
 
-- name: upload artifacts
-  image: bitgosdk/upload-tools:latest
+- name: upload reports
+  image: node:6
   commands:
+  - yarn add -s -W --ignore-engines --no-lockfile --ignore-scripts codecov aws-sdk
   - yarn run artifacts
-  - yarn run upload-docs
   - yarn run gen-coverage-changed
   - yarn run coverage -F unit
   environment:
@@ -145,11 +145,11 @@ steps:
     BITGOJS_TEST_PASSWORD:
       from_secret: password
 
-- name: upload artifacts
-  image: bitgosdk/upload-tools:latest
+- name: upload reports
+  image: node:8
   commands:
+  - yarn add -s -W --ignore-engines --no-lockfile --ignore-scripts codecov aws-sdk
   - yarn run artifacts
-  - yarn run upload-docs
   - yarn run gen-coverage-changed
   - yarn run coverage -F unit
   environment:
@@ -202,11 +202,11 @@ steps:
     BITGOJS_TEST_PASSWORD:
       from_secret: password
 
-- name: upload artifacts
-  image: bitgosdk/upload-tools:latest
+- name: upload reports
+  image: node:10
   commands:
+  - yarn add -s -W --ignore-engines --no-lockfile --ignore-scripts codecov aws-sdk
   - yarn run artifacts
-  - yarn run upload-docs
   - yarn run gen-coverage-changed
   - yarn run coverage -F unit
   environment:
@@ -259,11 +259,11 @@ steps:
     BITGOJS_TEST_PASSWORD:
       from_secret: password
 
-- name: upload artifacts
-  image: bitgosdk/upload-tools:latest
+- name: upload reports
+  image: node:11
   commands:
+  - yarn add -s -W --ignore-engines --no-lockfile --ignore-scripts codecov aws-sdk
   - yarn run artifacts
-  - yarn run upload-docs
   - yarn run gen-coverage-changed
   - yarn run coverage -F unit
   environment:
@@ -316,19 +316,11 @@ steps:
     BITGOJS_TEST_PASSWORD:
       from_secret: password
 
-- name: generate docs
-  image: bitgosdk/upload-tools:latest
+- name: upload reports
+  image: node:lts
   commands:
-  - yarn run gen-docs
-  when:
-    event:
-    - tag
-
-- name: upload artifacts
-  image: bitgosdk/upload-tools:latest
-  commands:
+  - yarn add -s -W --ignore-engines --no-lockfile --ignore-scripts codecov aws-sdk
   - yarn run artifacts
-  - yarn run upload-docs
   - yarn run gen-coverage
   - yarn run coverage -F integration
   environment:
