@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import ByteBuffer from 'byte';
 import * as _ from 'lodash';
 import BigNumber from 'bignumber.js';
 import { BaseCoin as CoinConfig } from '@bitgo/statics';
@@ -104,24 +105,27 @@ export abstract class TransactionBuilder extends BaseTransactionBuilder {
    * @returns {TransferBuilder} the builder with the new parameter set
    */
   block(block: Block): this {
-    // this.validateAddress(block); TODO : implement
-    const number = block.number;
-    const hash = block.hash;
+    const array = ByteBuffer.allocate(8)
+      .putLong(block.number)
+      .array();
 
-    this._refBlockHash = Buffer.from(hash, 'hex')
+    this._refBlockHash = Buffer.from(block.hash, 'hex')
       .slice(8, 16)
       .toString('hex');
 
-    this._refBlockBytes = Buffer.from(number.toString(16), 'hex')
-      .slice(0, 2)
-      .toString('hex');
+    this._refBlockBytes = array.slice(6, 8).toString('hex');
     return this;
   }
 
   expiration(time: number): this {
-    this._timestamp = this._timestamp || new Date().getTime();
+    this._timestamp = this._timestamp || Date.now();
     this.validateExpirationTime(time);
     this._expiration = time;
+    return this;
+  }
+
+  timestamp(time: number): this {
+    this._timestamp = time;
     return this;
   }
 

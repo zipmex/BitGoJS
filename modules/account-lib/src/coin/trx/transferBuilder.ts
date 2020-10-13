@@ -118,6 +118,10 @@ export class TransferBuilder extends TransactionBuilder {
   private createTransaction(): void {
     const rawDataHex = this.getRawDataHex();
     const rawData = decodeTransaction(rawDataHex);
+    (rawData.contract[0] as TransferContract).parameter.value.to_address = this._toAddress.toLocaleLowerCase();
+    (rawData.contract[0] as TransferContract).parameter.value.owner_address = this._ownerAddress.toLocaleLowerCase();
+    (rawData.contract[0] as TransferContract).parameter.type_url = 'type.googleapis.com/protocol.TransferContract';
+    (rawData.contract[0] as TransferContract).type = 'TransferContract';
     const hexBuffer = Buffer.from(rawDataHex, 'hex');
     const id = createHash('sha256')
       .update(hexBuffer)

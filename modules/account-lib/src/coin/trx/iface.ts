@@ -44,6 +44,7 @@ export interface RawData {
 }
 
 export interface Value {
+  type_url?: string;
   value: ValueFields;
 }
 
@@ -55,6 +56,7 @@ export interface ValueFields {
 }
 
 export interface TransferContract {
+  type?: string;
   parameter: Value;
 }
 

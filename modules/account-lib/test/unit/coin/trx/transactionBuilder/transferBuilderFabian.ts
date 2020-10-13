@@ -138,7 +138,7 @@ describe('Send founds builder with new model', function() {
         tx.outputs[0].value.should.equal('1718');
       });
 
-      it.skip('should build the right JSON after is half signed tx', async () => {
+      it('should build the right JSON after is half signed tx', async () => {
         const txJson = JSON.stringify(UnsignedBuildTransaction);
         txBuilder.from(txJson);
         txBuilder.sign({ key: FirstPrivateKey });
