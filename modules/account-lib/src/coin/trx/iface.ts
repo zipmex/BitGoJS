@@ -37,6 +37,8 @@ export interface TransactionReceipt {
 export interface RawData {
   expiration: number;
   timestamp: number;
+  ref_block_bytes: string;
+  ref_block_hash: string;
   contractType?: ContractType;
   contract: TransferContract[] | AccountPermissionUpdateContract[];
 }
@@ -71,4 +73,9 @@ export interface Permission {
 export interface PermissionKey {
   address: string;
   weight: number;
+}
+
+export interface Block {
+  number: number;
+  hash: string;
 }

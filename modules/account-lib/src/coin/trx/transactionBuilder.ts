@@ -7,10 +7,12 @@ import {
   BuildTransactionError,
   InvalidTransactionError,
   ParseTransactionError,
+  InvalidParameterValueError,
+  ExtendTransactionError,
 } from '../baseCoin/errors';
 import { BaseKey } from '../baseCoin/iface';
 import { BaseTransactionBuilder } from '../baseCoin';
-import { TransactionReceipt } from './iface';
+import { Block, TransactionReceipt } from './iface';
 import { Address } from './address';
 import { signTransaction, isBase58Address, decodeTransaction } from './utils';
 import { Transaction } from './transaction';
@@ -19,9 +21,14 @@ import { KeyPair } from './keyPair';
 /**
  * Tron transaction builder.
  */
-export class TransactionBuilder extends BaseTransactionBuilder {
+export abstract class TransactionBuilder extends BaseTransactionBuilder {
   // transaction being built
   private _transaction: Transaction;
+  protected _signingKeys: BaseKey[];
+  protected _refBlockBytes: string;
+  protected _refBlockHash: string;
+  protected _expiration: number;
+  protected _timestamp: number;
   /**
    * Public constructor.
    *
@@ -29,6 +36,21 @@ export class TransactionBuilder extends BaseTransactionBuilder {
    */
   constructor(_coinConfig: Readonly<CoinConfig>) {
     super(_coinConfig);
+    this._signingKeys = [];
+    this.transaction = new Transaction(_coinConfig);
+  }
+
+  /** @inheritdoc */
+  protected async buildImplementation(): Promise<Transaction> {
+    // This method must be extended on child classes
+    if (this._signingKeys.length > 0) {
+      this.applySignatures();
+    }
+
+    if (!this.transaction.id) {
+      throw new BuildTransactionError('A valid transaction must have an id');
+    }
+    return Promise.resolve(this.transaction);
   }
 
   /**
@@ -38,52 +60,76 @@ export class TransactionBuilder extends BaseTransactionBuilder {
    * @returns {Transaction} Tron transaction
    */
   protected fromImplementation(rawTransaction: TransactionReceipt | string): Transaction {
+    let tx;
     if (typeof rawTransaction === 'string') {
       const transaction = JSON.parse(rawTransaction);
-      return new Transaction(this._coinConfig, transaction);
+      tx = new Transaction(this._coinConfig, transaction);
+    } else {
+      tx = new Transaction(this._coinConfig, rawTransaction);
     }
-    return new Transaction(this._coinConfig, rawTransaction);
+    this.initBuilder(tx);
+    return this.transaction;
   }
 
   /** @inheritdoc */
   protected signImplementation(key: BaseKey): Transaction {
-    if (!this.transaction.inputs) {
-      throw new SigningError('Transaction has no sender');
+    if (this._signingKeys.includes(key)) {
+      throw new SigningError('Duplicated key');
     }
+    this._signingKeys.push(key);
 
-    if (!this.transaction.outputs) {
-      throw new SigningError('Transaction has no receiver');
-    }
-
-    const oldTransaction = this.transaction.toJson();
-    // Store the original signatures to compare them with the new ones in a later step. Signatures
-    // can be undefined if this is the first time the transaction is being signed
-    const oldSignatureCount = oldTransaction.signature ? oldTransaction.signature.length : 0;
-    let signedTransaction: TransactionReceipt;
-    try {
-      const keyPair = new KeyPair({ prv: key.key });
-      // Since the key pair was generated using a private key, it will always have a prv attribute,
-      // hence it is safe to use non-null operator
-      signedTransaction = signTransaction(keyPair.getKeys().prv!, this.transaction.toJson());
-    } catch (e) {
-      throw new SigningError('Failed to sign transaction via helper.');
-    }
-
-    // Ensure that we have more signatures than what we started with
-    if (!signedTransaction.signature || oldSignatureCount >= signedTransaction.signature.length) {
-      throw new SigningError('Transaction signing did not return an additional signature.');
-    }
-
-    return new Transaction(this._coinConfig, signedTransaction);
+    // We keep this return for compatibility but is not meant to be use
+    return this.transaction;
   }
 
-  /** @inheritdoc */
-  protected async buildImplementation(): Promise<Transaction> {
-    // This is a no-op since Tron transactions are built from
-    if (!this.transaction.id) {
-      throw new BuildTransactionError('A valid transaction must have an id');
+  /**
+   * Initialize the transaction builder fields using the decoded transaction data
+   *
+   * @param {Transaction} tx the transaction data
+   */
+  initBuilder(tx: Transaction) {
+    this.transaction = tx;
+    this._signingKeys = [];
+    const rawData = tx.toJson().raw_data;
+    this._refBlockBytes = rawData.ref_block_bytes;
+    this._refBlockHash = rawData.ref_block_hash;
+    this._expiration = rawData.expiration;
+    this._timestamp = rawData.timestamp;
+  }
+
+  /**
+   * Set the block values,
+   *
+   * @param {Block} block
+   * @returns {TransferBuilder} the builder with the new parameter set
+   */
+  block(block: Block): this {
+    // this.validateAddress(block); TODO : implement
+    const number = block.number;
+    const hash = block.hash;
+
+    this._refBlockHash = Buffer.from(hash, 'hex')
+      .slice(8, 16)
+      .toString('hex');
+
+    this._refBlockBytes = Buffer.from(number.toString(16), 'hex')
+      .slice(0, 2)
+      .toString('hex');
+    return this;
+  }
+
+  expiration(time: number): this {
+    this._timestamp = this._timestamp || new Date().getTime();
+    this.validateExpirationTime(time);
+    this._expiration = time;
+    return this;
+  }
+
+  // TODO: make proper time validation
+  validateExpirationTime(value: number): void {
+    if (value < this._timestamp) {
+      throw new InvalidParameterValueError('Value must be greater than timestamp');
     }
-    return Promise.resolve(this.transaction);
   }
 
   /**
@@ -93,7 +139,11 @@ export class TransactionBuilder extends BaseTransactionBuilder {
    * @returns {undefined}
    */
   extendValidTo(extensionMs: number): void {
-    this.transaction.extendExpiration(extensionMs);
+    // this.transaction.extendExpiration(extensionMs);
+    if (this.transaction.signature && this.transaction.signature.length > 0) {
+      throw new ExtendTransactionError('Cannot extend a signed transaction');
+    }
+    this._expiration += extensionMs;
   }
 
   /** @inheritdoc */
@@ -186,12 +236,48 @@ export class TransactionBuilder extends BaseTransactionBuilder {
   /** @inheritdoc */
   // Specifically, checks hex underlying transaction hashes to correct transaction ID.
   validateTransaction(transaction: Transaction): void {
-    const hexBuffer = Buffer.from(transaction.toJson().raw_data_hex, 'hex');
-    const txId = createHash('sha256')
-      .update(hexBuffer)
-      .digest('hex');
-    if (transaction.id !== txId) {
-      throw new InvalidTransactionError(transaction.id + ' is not a valid transaction id. Expecting: ' + txId);
+    this.validateMandatoryFields();
+  }
+
+  validateMandatoryFields() {
+    if (!this._refBlockBytes || !this._refBlockHash) {
+      throw new BuildTransactionError('Missing block reference information');
+    }
+
+    if (!this._expiration || !this._timestamp) {
+      throw new BuildTransactionError('Missing expiration or timestamp info');
+    }
+  }
+
+  private applySignatures(): void {
+    if (!this.transaction.inputs) {
+      throw new SigningError('Transaction has no sender');
+    }
+
+    if (!this.transaction.outputs) {
+      throw new SigningError('Transaction has no receiver');
+    }
+    this._signingKeys.forEach(key => this.applySignature(key));
+  }
+
+  private applySignature(key: BaseKey): void {
+    const oldTransaction = this.transaction.toJson();
+    // Store the original signatures to compare them with the new ones in a later step. Signatures
+    // can be undefined if this is the first time the transaction is being signed
+    const oldSignatureCount = oldTransaction.signature ? oldTransaction.signature.length : 0;
+    let signedTransaction: TransactionReceipt;
+    try {
+      const keyPair = new KeyPair({ prv: key.key });
+      // Since the key pair was generated using a private key, it will always have a prv attribute,
+      // hence it is safe to use non-null operator
+      signedTransaction = signTransaction(keyPair.getKeys().prv!, this.transaction.toJson());
+    } catch (e) {
+      throw new SigningError('Failed to sign transaction via helper.');
+    }
+
+    // Ensure that we have more signatures than what we started with
+    if (!signedTransaction.signature || oldSignatureCount >= signedTransaction.signature.length) {
+      throw new SigningError('Transaction signing did not return an additional signature.');
     }
   }
 

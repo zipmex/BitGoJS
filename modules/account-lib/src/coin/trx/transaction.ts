@@ -104,7 +104,7 @@ export class Transaction extends BaseTransaction {
   /**
    * Extend the expiration date by the given number of milliseconds.
    *
-   * @param extensionMs The number of milliseconds to extend the expiration by
+   * @param {number} extensionMs The number of milliseconds to extend the expiration by
    */
   extendExpiration(extensionMs: number): void {
     if (extensionMs < 0) {
@@ -142,10 +142,7 @@ export class Transaction extends BaseTransaction {
    * Get the signatures associated with this transaction.
    */
   get signature(): string[] {
-    if (!this._transaction) {
-      throw new ParseTransactionError('Empty transaction');
-    }
-    if (this._transaction.signature) {
+    if (this._transaction && this._transaction.signature) {
       return this._transaction.signature;
     }
     return [];
@@ -172,6 +169,25 @@ export class Transaction extends BaseTransaction {
     // private key with any but the account main address. This is not enough to fail this check, so
     // it is a no-op.
     return true;
+  }
+
+  /**
+   * Sets this transaction
+   *
+   * @param {Transaction} tx transaction
+   */
+  setTransactionReceipt(tx: TransactionReceipt) {
+    this._transaction = tx;
+    this.updateId();
+  }
+
+  /**
+   * Set the transaction type
+   *
+   * @param {TransactionType} transactionType The transaction type to be set
+   */
+  setTransactionType(transactionType: TransactionType): void {
+    this._type = transactionType;
   }
 
   /** @inheritdoc */
