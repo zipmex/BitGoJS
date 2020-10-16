@@ -53,11 +53,24 @@ export class Transaction extends BaseTransaction {
     this._validTo = rawData.expiration;
 
     let output, input;
+    let value;
     // Contract-specific fields
     switch (rawData.contractType) {
       case ContractType.Transfer:
         this._type = TransactionType.Send;
-        const value = new BigNumber((rawData.contract[0] as TransferContract).parameter.value.amount).toFixed(0);
+        value = new BigNumber((rawData.contract[0] as TransferContract).parameter.value.amount).toFixed(0);
+        output = {
+          address: (rawData.contract[0] as TransferContract).parameter.value.to_address,
+          value,
+        };
+        input = {
+          address: (rawData.contract[0] as TransferContract).parameter.value.owner_address,
+          value,
+        };
+        break;
+      case ContractType.TransferToken:
+        this._type = TransactionType.Send;
+        value = new BigNumber((rawData.contract[0] as TransferContract).parameter.value.amount).toFixed(0);
         output = {
           address: (rawData.contract[0] as TransferContract).parameter.value.to_address,
           value,

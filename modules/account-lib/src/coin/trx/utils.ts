@@ -5,7 +5,15 @@ import BigNumber from 'bignumber.js';
 import { protocol } from '../../../resources/trx/protobuf/tron';
 
 import { UtilsError } from '../baseCoin/errors';
-import { TransferContract, RawData, AccountPermissionUpdateContract, TransactionReceipt, Permission } from './iface';
+import {
+  TransferContract,
+  RawData,
+  AccountPermissionUpdateContract,
+  TransactionReceipt,
+  Permission,
+  TransferAssetContract,
+  TokenValueFields,
+} from './iface';
 import { ContractType, PermissionType } from './enum';
 
 /**
@@ -138,13 +146,17 @@ export function decodeTransaction(hexString: string): RawData {
     throw new UtilsError('Number of contracts is greater than 1.');
   }
 
-  let contract: TransferContract[] | AccountPermissionUpdateContract[];
+  let contract: TransferContract[] | TransferAssetContract[] | AccountPermissionUpdateContract[];
   let contractType: ContractType;
   // ensure the contract type is supported
   switch (rawTransaction.contracts[0].parameter.type_url) {
     case 'type.googleapis.com/protocol.TransferContract':
       contractType = ContractType.Transfer;
       contract = exports.decodeTransferContract(rawTransaction.contracts[0].parameter.value);
+      break;
+    case 'type.googleapis.com/protocol.TransferAssetContract':
+      contractType = ContractType.TransferToken;
+      contract = exports.decodeTransferTokenContract(rawTransaction.contracts[0].parameter.value as TokenValueFields);
       break;
     case 'type.googleapis.com/protocol.AccountPermissionUpdateContract':
       contractType = ContractType.AccountPermissionUpdate;
@@ -245,6 +257,63 @@ export function decodeTransferContract(transferHex: string): TransferContract[] 
           owner_address,
           to_address,
         },
+      },
+    },
+  ];
+}
+
+/** Deserialize the segment of the txHex which corresponds with the details of the transfer
+ *
+ * @param transferHex is the value property of the "parameter" field of contractList[0]
+ * */
+export function decodeTransferTokenContract(transferHex: string): TransferAssetContract[] {
+  const contractBytes = Buffer.from(transferHex, 'base64');
+  let transferTokenContract;
+
+  try {
+    transferTokenContract = protocol.TransferAssetContract.decode(contractBytes);
+  } catch (e) {
+    throw new UtilsError('There was an error decoding the transfer token contract in the transaction.');
+  }
+
+  if (!transferTokenContract.ownerAddress) {
+    throw new UtilsError('Owner address does not exist in this transfer token contract.');
+  }
+
+  if (!transferTokenContract.toAddress) {
+    throw new UtilsError('Destination address does not exist in this transfer token contract.');
+  }
+
+  if (!transferTokenContract.assetName) {
+    throw new UtilsError('Destination address does not exist in this transfer token contract.');
+  }
+
+  if (!transferTokenContract.hasOwnProperty('amount')) {
+    throw new UtilsError('Amount does not exist in this transfer contract.');
+  }
+
+  // deserialize attributes
+  const owner_address = getBase58AddressFromByteArray(
+    getByteArrayFromHexAddress(Buffer.from(transferTokenContract.ownerAddress, 'base64').toString('hex')),
+  );
+  const to_address = getBase58AddressFromByteArray(
+    getByteArrayFromHexAddress(Buffer.from(transferTokenContract.toAddress, 'base64').toString('hex')),
+  );
+  const amount = transferTokenContract.amount;
+
+  const asset_name = transferTokenContract.assetName;
+
+  const value = {
+    amount: Number(amount),
+    owner_address,
+    to_address,
+    asset_name,
+  };
+
+  return [
+    {
+      parameter: {
+        value: value as TokenValueFields,
       },
     },
   ];

@@ -4,6 +4,7 @@ import { InvalidTransactionError, ParseTransactionError } from '../baseCoin/erro
 import { Transaction } from './transaction';
 import { TransactionBuilder } from './transactionBuilder';
 import { TransferBuilder } from './transferBuilder';
+import { TransferTokenBuilder } from './transferTokenBuilder';
 import { decodeTransaction, isValidRawTransactionFormat } from './utils';
 import { ContractType } from './enum';
 import { RawData } from './iface';
@@ -24,6 +25,11 @@ export class TransactionBuilderFactory extends BaseTransactionBuilderFactory {
   }
 
   /** @inheritdoc */
+  getTransferTokenBuilder(tx?: Transaction): TransferTokenBuilder {
+    return this.initializeBuilder(tx, new TransferTokenBuilder(this._coinConfig));
+  }
+
+  /** @inheritdoc */
   public getWalletInitializationBuilder() {
     throw new Error('Method not implemented.');
   }
@@ -37,6 +43,8 @@ export class TransactionBuilderFactory extends BaseTransactionBuilderFactory {
     switch (contractType) {
       case ContractType.Transfer:
         return this.getTransferBuilder(new Transaction(this._coinConfig, txReceip));
+      case ContractType.TransferToken:
+        return this.getTransferTokenBuilder(new Transaction(this._coinConfig, txReceip));
       default:
         throw new InvalidTransactionError('Invalid transaction type: ' + contractType);
     }

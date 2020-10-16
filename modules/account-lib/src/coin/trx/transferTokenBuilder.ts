@@ -6,7 +6,7 @@ import { protocol } from '../../../resources/trx/protobuf/tron';
 import { TransactionBuilder } from './transactionBuilder';
 import { Address } from './address';
 import { Transaction } from './transaction';
-import { TransactionReceipt, TransferContract } from './iface';
+import { TokenValueFields, TransactionReceipt, TransferAssetContract } from './iface';
 import {
   decodeTransaction,
   getBase58AddressFromHex,
@@ -16,10 +16,11 @@ import {
 import ContractType = protocol.Transaction.Contract.ContractType;
 import { createHash } from 'crypto';
 
-export class TransferBuilder extends TransactionBuilder {
+export class TransferTokenBuilder extends TransactionBuilder {
   private _toAddress: string;
   private _amount: string;
   private _ownerAddress: string;
+  private _assetName: string;
 
   constructor(_coinConfig: Readonly<CoinConfig>) {
     super(_coinConfig);
@@ -36,8 +37,8 @@ export class TransferBuilder extends TransactionBuilder {
     super.initBuilder(tx);
     this.transaction.setTransactionType(TransactionType.Send);
     const raw_data = tx.toJson().raw_data;
-    const transferContract = raw_data.contract[0] as TransferContract;
-    this.initTransfers(transferContract);
+    const transferAssetContract = raw_data.contract[0] as TransferAssetContract;
+    this.initTransfers(transferAssetContract);
     return this;
   }
 
@@ -48,8 +49,8 @@ export class TransferBuilder extends TransactionBuilder {
    *
    * @param {ValueFields} transfer object with transfer data
    */
-  protected initTransfers(transfer: TransferContract): void {
-    const { amount, owner_address, to_address } = transfer.parameter.value;
+  protected initTransfers(transfer: TransferAssetContract): void {
+    const { amount, owner_address, to_address, asset_name } = transfer.parameter.value as TokenValueFields;
     if (amount) {
       this.amount(amount.toFixed());
     }
@@ -58,6 +59,9 @@ export class TransferBuilder extends TransactionBuilder {
     }
     if (owner_address) {
       this.source({ address: getBase58AddressFromHex(owner_address) });
+    }
+    if (asset_name) {
+      this.coin(asset_name);
     }
   }
 
@@ -72,6 +76,9 @@ export class TransferBuilder extends TransactionBuilder {
     }
     if (!this._amount) {
       throw new BuildTransactionError('Missing parameter: amount');
+    }
+    if (!this._assetName) {
+      throw new BuildTransactionError('Missing parameter: coin');
     }
   }
 
@@ -113,15 +120,29 @@ export class TransferBuilder extends TransactionBuilder {
     return this;
   }
 
+  coin(coin: string): this {
+    // "trx:wbtc"
+    // "trx:weth"
+    // this.validateString(coin); TODO : validate token name
+    this._assetName = getHexAddressFromBase58Address(coin);
+    return this;
+  }
+
   //endregion
 
   private createTransaction(): void {
     const rawDataHex = this.getRawDataHex();
     const rawData = decodeTransaction(rawDataHex);
-    (rawData.contract[0] as TransferContract).parameter.value.to_address = this._toAddress.toLocaleLowerCase();
-    (rawData.contract[0] as TransferContract).parameter.value.owner_address = this._ownerAddress.toLocaleLowerCase();
-    (rawData.contract[0] as TransferContract).parameter.type_url = 'type.googleapis.com/protocol.TransferContract';
-    (rawData.contract[0] as TransferContract).type = 'TransferContract';
+    const contract = rawData.contract[0] as TransferAssetContract;
+    const tokenValueFields = contract.parameter.value as TokenValueFields;
+
+    tokenValueFields.to_address = this._toAddress.toLocaleLowerCase();
+    tokenValueFields.owner_address = this._ownerAddress.toLocaleLowerCase();
+    tokenValueFields.asset_name = this._assetName.toLocaleLowerCase();
+
+    contract.parameter.type_url = 'type.googleapis.com/protocol.TransferAssetContract';
+    contract.type = 'TransferAssetContract';
+
     const hexBuffer = Buffer.from(rawDataHex, 'hex');
     const id = createHash('sha256')
       .update(hexBuffer)
@@ -140,14 +161,15 @@ export class TransferBuilder extends TransactionBuilder {
       ownerAddress: getByteArrayFromHexAddress(this._ownerAddress),
       toAddress: getByteArrayFromHexAddress(this._toAddress),
       amount: new BigNumber(this._amount).toNumber(),
+      assetName: getByteArrayFromHexAddress(this._assetName),
     };
-    const transferContract = protocol.TransferContract.fromObject(rawContract);
-    const contractBytes = protocol.TransferContract.encode(transferContract).finish();
+    const transferAssetContract = protocol.TransferAssetContract.fromObject(rawContract);
+    const contractBytes = protocol.TransferAssetContract.encode(transferAssetContract).finish();
     const txContract = {
-      type: ContractType.TransferContract,
+      type: ContractType.TransferAssetContract,
       parameter: {
         value: contractBytes,
-        type_url: 'type.googleapis.com/protocol.TransferContract',
+        type_url: 'type.googleapis.com/protocol.TransferAssetContract',
       },
     };
     const raw = {

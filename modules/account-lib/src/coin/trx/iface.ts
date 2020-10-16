@@ -40,7 +40,7 @@ export interface RawData {
   ref_block_bytes: string;
   ref_block_hash: string;
   contractType?: ContractType;
-  contract: TransferContract[] | AccountPermissionUpdateContract[];
+  contract: TransferContract[] | AccountPermissionUpdateContract[] | TransferAssetContract[];
 }
 
 export interface Value {
@@ -55,7 +55,16 @@ export interface ValueFields {
   to_address: string;
 }
 
+export interface TokenValueFields extends ValueFields {
+  asset_name: string;
+}
+
 export interface TransferContract {
+  type?: string;
+  parameter: Value;
+}
+
+export interface TransferAssetContract {
   type?: string;
   parameter: Value;
 }

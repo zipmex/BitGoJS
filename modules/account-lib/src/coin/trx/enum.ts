@@ -10,6 +10,10 @@ export enum ContractType {
    * This is the multi-sig initialization contract.
    */
   AccountPermissionUpdate,
+  /**
+   * This is a transfer token of TRX contract.
+   */
+  TransferToken,
 }
 
 export enum PermissionType {
