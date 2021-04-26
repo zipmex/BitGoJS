@@ -44,7 +44,8 @@
       "prepare-commit-msg": "exec < /dev/tty && cz --hook || true"
     }
   },
-  "resolutions": {
+  "resolutions": {},
+  "a": {
     "bl": "4.0.3",
     "dot-prop": "5.2.0",
     "elliptic": "^6.5.4",

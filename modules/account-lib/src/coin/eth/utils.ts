@@ -1,4 +1,3 @@
-import {Buffer} from 'buffer';
 import assert from 'assert';
 import {
   addHexPrefix,
@@ -10,13 +9,13 @@ import {
   stripHexPrefix,
   toBuffer,
 } from 'ethereumjs-util';
-import {BaseCoin, coins, ContractAddressDefinedToken, NetworkType} from '@bitgo/statics';
+import { BaseCoin, coins, ContractAddressDefinedToken, NetworkType } from '@bitgo/statics';
 import EthereumAbi from 'ethereumjs-abi';
 import EthereumCommon from 'ethereumjs-common';
 import * as BN from 'bn.js';
 import BigNumber from 'bignumber.js';
-import {BuildTransactionError, InvalidTransactionError, SigningError} from '../baseCoin/errors';
-import {TransactionType} from '../baseCoin';
+import { BuildTransactionError, InvalidTransactionError, SigningError } from '../baseCoin/errors';
+import { TransactionType } from '../baseCoin';
 import {
   ActivateMethodId,
   LockMethodId,
@@ -25,8 +24,8 @@ import {
   VoteMethodId,
   WithdrawMethodId,
 } from '../celo/stakingUtils';
-import {FlushTokensData, NativeTransferData, SignatureParts, TokenTransferData, TransferData, TxData} from './iface';
-import {KeyPair} from './keyPair';
+import { FlushTokensData, NativeTransferData, SignatureParts, TokenTransferData, TransferData, TxData } from './iface';
+import { KeyPair } from './keyPair';
 import {
   createForwarderMethodId,
   flushCoinsMethodId,
@@ -40,8 +39,8 @@ import {
   walletInitializationFirstBytes,
   walletSimpleConstructor,
 } from './walletUtil';
-import {mainnetCommon, testnetCommon} from './resources';
-import {EthTransactionData} from './types';
+import { mainnetCommon, testnetCommon } from './resources';
+import { EthTransactionData } from './types';
 
 const commons: Map<NetworkType, EthereumCommon> = new Map<NetworkType, EthereumCommon>([
   [NetworkType.MAINNET, mainnetCommon],
@@ -138,6 +137,7 @@ export function sendMultiSigTokenData(
 ): string {
   const params = [to, value, tokenContractAddress, expireTime, sequenceId, toBuffer(signature)];
   const method = EthereumAbi.methodID('sendMultiSigToken', sendMultiSigTokenTypes);
+  // export const sendMultiSigTokenTypes = ['address', 'uint', 'address', 'uint', 'uint', 'bytes'];
   const args = EthereumAbi.rawEncode(sendMultiSigTokenTypes, params);
   return addHexPrefix(Buffer.concat([method, args]).toString('hex'));
 }
@@ -261,12 +261,12 @@ export function decodeTokenTransferData(data: string): TokenTransferData {
   );
 
   return {
-    to: addHexPrefix(to),
+    to: bufferToHex(to),
     amount: new BigNumber(bufferToHex(amount)).toFixed(),
     expireTime: bufferToInt(expireTime),
     sequenceId: bufferToInt(sequenceId),
     signature: bufferToHex(signature),
-    tokenContractAddress: addHexPrefix(tokenContractAddress),
+    tokenContractAddress: bufferToHex(tokenContractAddress),
   };
 }
 
@@ -287,7 +287,7 @@ export function decodeNativeTransferData(data: string): NativeTransferData {
   );
 
   return {
-    to: addHexPrefix(to),
+    to: bufferToHex(to),
     amount: new BigNumber(bufferToHex(amount)).toFixed(),
     expireTime: bufferToInt(expireTime),
     sequenceId: bufferToInt(sequenceId),
@@ -313,8 +313,8 @@ export function decodeFlushTokensData(data: string): FlushTokensData {
   );
 
   return {
-    forwarderAddress: addHexPrefix(forwarderAddress),
-    tokenAddress: addHexPrefix(tokenAddress),
+    forwarderAddress: bufferToHex(forwarderAddress),
+    tokenAddress: bufferToHex(tokenAddress),
   };
 }
 
@@ -386,7 +386,7 @@ export function hexStringToNumber(hex: string): number {
  * @returns {string} the calculated forwarder contract address
  */
 export function calculateForwarderAddress(contractAddress: string, contractCounter: number): string {
-  const forwarderAddress = generateAddress(contractAddress, contractCounter);
+  const forwarderAddress = generateAddress(toBuffer(contractAddress), toBuffer(contractCounter));
   return addHexPrefix(forwarderAddress.toString('hex'));
 }
 
@@ -397,7 +397,9 @@ export function calculateForwarderAddress(contractAddress: string, contractCount
  * @returns {string} String representation of the signature
  */
 export function toStringSig(sig: SignatureParts): string {
-  return bufferToHex(Buffer.concat([setLengthLeft(sig.r, 32), setLengthLeft(sig.s, 32), toBuffer(sig.v)]));
+  return bufferToHex(
+    Buffer.concat([setLengthLeft(toBuffer(sig.r), 32), setLengthLeft(toBuffer(sig.s), 32), toBuffer(sig.v)]),
+  );
 }
 
 /**
