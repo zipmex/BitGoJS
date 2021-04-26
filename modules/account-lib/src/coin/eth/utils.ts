@@ -261,12 +261,12 @@ export function decodeTokenTransferData(data: string): TokenTransferData {
   );
 
   return {
-    to: bufferToHex(to),
-    amount: new BigNumber(bufferToHex(amount)).toFixed(),
-    expireTime: bufferToInt(expireTime),
-    sequenceId: bufferToInt(sequenceId),
-    signature: bufferToHex(signature),
-    tokenContractAddress: bufferToHex(tokenContractAddress),
+    to: addHexPrefix(to as string),
+    amount: (amount as BN).toString(),
+    expireTime: (expireTime as BN).toNumber(),
+    sequenceId: (sequenceId as BN).toNumber(),
+    signature: bufferToHex(signature as Buffer),
+    tokenContractAddress: addHexPrefix(tokenContractAddress as string),
   };
 }
 
@@ -287,12 +287,12 @@ export function decodeNativeTransferData(data: string): NativeTransferData {
   );
 
   return {
-    to: bufferToHex(to),
-    amount: new BigNumber(bufferToHex(amount)).toFixed(),
-    expireTime: bufferToInt(expireTime),
-    sequenceId: bufferToInt(sequenceId),
-    signature: bufferToHex(signature),
-    data: bufferToHex(internalData),
+    to: addHexPrefix(to as string),
+    amount: (amount as Buffer).toString(),
+    expireTime: (expireTime as BN).toNumber(),
+    sequenceId: (sequenceId as BN).toNumber(),
+    signature: bufferToHex(signature as Buffer),
+    data: bufferToHex(internalData as Buffer),
   };
 }
 
@@ -313,8 +313,8 @@ export function decodeFlushTokensData(data: string): FlushTokensData {
   );
 
   return {
-    forwarderAddress: bufferToHex(forwarderAddress),
-    tokenAddress: bufferToHex(tokenAddress),
+    forwarderAddress: addHexPrefix(forwarderAddress as string),
+    tokenAddress: addHexPrefix(tokenAddress as string),
   };
 }
 
@@ -426,7 +426,7 @@ export function hasSignature(txData: TxData): boolean {
  * @param {Buffer} serializedArgs encoded args
  * @returns {Buffer[]} the decoded raw
  */
-export function getRawDecoded(types: string[], serializedArgs: Buffer): Buffer[] {
+export function getRawDecoded(types: string[], serializedArgs: Buffer): unknown[] {
   return EthereumAbi.rawDecode(types, serializedArgs);
 }
 
