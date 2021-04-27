@@ -39,36 +39,35 @@ describe('ETH-like coins', () => {
        * @param tx The transaction to calculate operatino hash from
        * @return The operation hash
        */
-      const getOperationHash = (tx: BaseCoin.BaseTransaction): string => {
+      const getOperationHash = (tx: BaseCoin.BaseTransaction): Buffer => {
         const { data } = tx.toJson();
         const { tokenContractAddress, expireTime, sequenceId, amount, to } = Eth.Utils.decodeTransferData(data);
 
         if (coin instanceof ContractAddressDefinedToken) {
+          if (!tokenContractAddress) {
+            throw new Error('missing token contract address');
+          }
           return ethAbi.soliditySHA3(
-            ...[
-              ['string', 'address', 'uint', 'address', 'uint', 'uint'],
-              [
-                signatureSaltMap.token[coinName],
-                new ethUtil.BN(ethUtil.stripHexPrefix(to), 16),
-                amount,
-                new ethUtil.BN(ethUtil.stripHexPrefix(tokenContractAddress), 16),
-                expireTime,
-                sequenceId,
-              ],
-            ]
+            ['string', 'address', 'uint', 'address', 'uint', 'uint'],
+            [
+              signatureSaltMap.token[coinName],
+              new ethUtil.BN(ethUtil.stripHexPrefix(to), 16),
+              amount,
+              new ethUtil.BN(ethUtil.stripHexPrefix(tokenContractAddress), 16),
+              expireTime,
+              sequenceId,
+            ],
           );
         } else {
           return ethAbi.soliditySHA3(
-            ...[
-              ['string', 'address', 'uint', 'uint', 'uint'],
-              [
-                signatureSaltMap.native[coinName],
-                new ethUtil.BN(ethUtil.stripHexPrefix(to), 16),
-                amount,
-                expireTime,
-                sequenceId,
-              ],
-            ]
+            ['string', 'address', 'uint', 'uint', 'uint'],
+            [
+              signatureSaltMap.native[coinName],
+              new ethUtil.BN(ethUtil.stripHexPrefix(to), 16),
+              amount,
+              expireTime,
+              sequenceId,
+            ],
           );
         }
       };
@@ -265,10 +264,9 @@ describe('ETH-like coins', () => {
           let data;
           let expireTime;
           let sequenceId;
-          let tokenContractAddress;
           if (coin instanceof ContractAddressDefinedToken) {
             decodedData = ethAbi.rawDecode(sendMultisigTokenTypes, Buffer.from(txJson.data.slice(10), 'hex'));
-            [recipient, value, tokenContractAddress, expireTime, sequenceId] = decodedData;
+            [recipient, value, , expireTime, sequenceId] = decodedData;
             data = Buffer.from('');
           } else {
             decodedData = ethAbi.rawDecode(sendMultisigTypes, Buffer.from(txJson.data.slice(10), 'hex'));
@@ -319,10 +317,9 @@ describe('ETH-like coins', () => {
           let data;
           let expireTime;
           let sequenceId;
-          let tokenContractAddress;
           if (coin instanceof ContractAddressDefinedToken) {
             decodedData = ethAbi.rawDecode(sendMultisigTokenTypes, Buffer.from(txJson.data.slice(10), 'hex'));
-            [recipient, value, tokenContractAddress, expireTime, sequenceId] = decodedData;
+            [recipient, value, , expireTime, sequenceId] = decodedData;
             data = Buffer.from('');
           } else {
             decodedData = ethAbi.rawDecode(sendMultisigTypes, Buffer.from(txJson.data.slice(10), 'hex'));
@@ -385,10 +382,9 @@ describe('ETH-like coins', () => {
           let data;
           let expireTime;
           let sequenceId;
-          let tokenContractAddress;
           if (coin instanceof ContractAddressDefinedToken) {
             decodedData = ethAbi.rawDecode(sendMultisigTokenTypes, Buffer.from(txJson.data.slice(10), 'hex'));
-            [recipient, value, tokenContractAddress, expireTime, sequenceId] = decodedData;
+            [recipient, value, , expireTime, sequenceId] = decodedData;
             data = Buffer.from('');
           } else {
             decodedData = ethAbi.rawDecode(sendMultisigTypes, Buffer.from(txJson.data.slice(10), 'hex'));
@@ -431,7 +427,6 @@ describe('ETH-like coins', () => {
         });
 
         it('explain an unsigned transfer transaction', async function() {
-          const key = new Eth.KeyPair({ prv: xprv });
           const destination = '0xfaa8f14f46a99eb439c50e0c3b835cc21dad51b4';
           const contractAddress = '0x9e2c5712ab4caf402a98c4bf58c79a0dfe718ad1';
 
